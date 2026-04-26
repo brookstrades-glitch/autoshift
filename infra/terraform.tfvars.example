@@ -1,0 +1,7 @@
+supabase_access_token = "sbp_xxxxxxxxxxxx"
+supabase_org_id       = "your-org-id"
+supabase_db_password  = "strong-db-password"
+vercel_api_token      = "your-vercel-token"
+github_repo           = "brookstrades-glitch/autoshift"
+admin_password        = "your-admin-password"
+nextauth_secret       = "your-32-char-random-string"
