@@ -39,26 +39,55 @@ export default function SellerForm() {
   }
 
   async function compressImage(file: File): Promise<Blob> {
-    return new Promise((resolve) => {
-      const img = new Image();
-      const url = URL.createObjectURL(file);
-      img.onload = () => {
-        URL.revokeObjectURL(url);
-        const MAX = 1920;
-        let { width, height } = img;
-        if (width > MAX || height > MAX) {
-          if (width > height) { height = Math.round(height * MAX / width); width = MAX; }
-          else { width = Math.round(width * MAX / height); height = MAX; }
-        }
-        const canvas = document.createElement('canvas');
-        canvas.width = width;
-        canvas.height = height;
-        canvas.getContext('2d')!.drawImage(img, 0, 0, width, height);
-        canvas.toBlob(blob => resolve(blob ?? file), 'image/jpeg', 0.85);
-      };
-      img.onerror = () => resolve(file);
-      img.src = url;
-    });
+    // Skip compression for already-small files
+    if (file.size < 1 * 1024 * 1024) return file;
+
+    try {
+      return await new Promise<Blob>((resolve, reject) => {
+        const img = new Image();
+        const url = URL.createObjectURL(file);
+        const timeout = setTimeout(() => reject(new Error('timeout')), 30_000);
+
+        img.onload = () => {
+          clearTimeout(timeout);
+          URL.revokeObjectURL(url);
+          try {
+            const MAX = 1280;
+            let { width, height } = img;
+            if (width > MAX || height > MAX) {
+              if (width > height) { height = Math.round(height * MAX / width); width = MAX; }
+              else { width = Math.round(width * MAX / height); height = MAX; }
+            }
+            const canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            if (!ctx) { reject(new Error('no-ctx')); return; }
+            ctx.drawImage(img, 0, 0, width, height);
+            canvas.toBlob(blob => {
+              // Release canvas memory immediately
+              canvas.width = 0;
+              canvas.height = 0;
+              // Only use compressed version if it's actually smaller
+              resolve(blob && blob.size < file.size ? blob : file);
+            }, 'image/jpeg', 0.82);
+          } catch (err) {
+            reject(err);
+          }
+        };
+
+        img.onerror = () => {
+          clearTimeout(timeout);
+          URL.revokeObjectURL(url);
+          reject(new Error('load-failed'));
+        };
+
+        img.src = url;
+      });
+    } catch {
+      // Any failure — canvas OOM, context unavailable, timeout — fall back to original
+      return file;
+    }
   }
 
   async function handleSubmit(e: React.FormEvent) {
