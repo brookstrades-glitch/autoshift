@@ -23,21 +23,15 @@ export default async function HomePage() {
     <>
       {/* ── Hero ─────────────────────────────────────────────── */}
       <section className="relative min-h-[52svh] flex flex-col justify-end overflow-hidden">
-        {/* Background video */}
-        <video
-          autoPlay
-          muted
-          loop
-          playsInline
-          poster="https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=1920&q=80"
+        <img
+          src="https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=1920&q=80"
+          alt=""
           aria-hidden="true"
+          fetchPriority="high"
           className="absolute inset-0 w-full h-full object-cover object-center"
-          style={{ filter: 'brightness(0.55) saturate(0.65)' }}
-        >
-          <source src="/videos/hero-bg.mp4" type="video/mp4" />
-        </video>
-        <div className="absolute inset-0" style={{ background: 'rgba(0,0,0,0.5)' }} />
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent" />
+          style={{ filter: 'brightness(0.42) saturate(0.7)' }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/55 to-transparent" />
         <div className="absolute inset-0 bg-gradient-to-r from-background/40 to-transparent" />
 
         {/* Hero content */}
