@@ -1,5 +1,5 @@
 'use client';
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,8 +16,20 @@ export default function SellerForm() {
   const [uploadProgress, setUploadProgress] = useState('');
   const [submitError, setSubmitError] = useState('');
   const [photoError, setPhotoError] = useState('');
+  const [offline, setOffline] = useState(false);
   const [photos, setPhotos] = useState<File[]>([]);
   const honeypotRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const goOffline = () => setOffline(true);
+    const goOnline  = () => setOffline(false);
+    window.addEventListener('offline', goOffline);
+    window.addEventListener('online',  goOnline);
+    return () => {
+      window.removeEventListener('offline', goOffline);
+      window.removeEventListener('online',  goOnline);
+    };
+  }, []);
 
   const [form, setForm] = useState({
     first_name: '', last_name: '', phone: '', email: '',
@@ -38,9 +50,30 @@ export default function SellerForm() {
     return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
   }
 
+  async function uploadWithRetry(file: File, filename: string, attempt = 0): Promise<string> {
+    const { error } = await supabase.storage
+      .from('vehicle-photos')
+      .upload(filename, file, { contentType: file.type || 'image/jpeg' });
+
+    if (error) {
+      if (attempt < 2) {
+        await new Promise(r => setTimeout(r, (attempt + 1) * 1000));
+        return uploadWithRetry(file, filename, attempt + 1);
+      }
+      throw new Error(error.message);
+    }
+
+    const { data: urlData } = supabase.storage.from('vehicle-photos').getPublicUrl(filename);
+    return urlData.publicUrl;
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (photos.length === 0) { setPhotoError('At least one photo is required.'); return; }
+    if (!navigator.onLine) {
+      setSubmitError('No internet connection. Please check your connection and try again.');
+      return;
+    }
     setPhotoError('');
     setSubmitError('');
     setLoading(true);
@@ -55,20 +88,13 @@ export default function SellerForm() {
         const ext = file.name.split('.').pop()?.toLowerCase() ?? 'jpg';
         const filename = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
 
-        const { error } = await supabase.storage
-          .from('vehicle-photos')
-          .upload(filename, file, { contentType: file.type || 'image/jpeg' });
-
-        if (error) {
-          setSubmitError(`Photo ${i + 1} upload failed: ${error.message}`);
+        try {
+          const url = await uploadWithRetry(file, filename);
+          photoUrls.push(url);
+        } catch (err) {
+          setSubmitError(`Photo ${i + 1} upload failed. Check your connection and try again.`);
           return;
         }
-
-        const { data: urlData } = supabase.storage
-          .from('vehicle-photos')
-          .getPublicUrl(filename);
-
-        photoUrls.push(urlData.publicUrl);
       }
 
       // Step 2: send form fields + URLs as JSON with a 30-second timeout.
@@ -332,6 +358,12 @@ export default function SellerForm() {
           <p role="alert" className="text-sm text-destructive mt-1">{photoError}</p>
         )}
       </div>
+
+      {offline && (
+        <p role="status" className="text-sm text-amber-400 text-center px-1">
+          You appear to be offline — check your connection before submitting.
+        </p>
+      )}
 
       {submitError && (
         <p role="alert" className="text-sm text-destructive text-center px-1">{submitError}</p>
