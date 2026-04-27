@@ -8,7 +8,7 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { formatCurrency, comfortLabel } from '@/lib/utils';
+import { formatCurrency } from '@/lib/utils';
 import { useToast } from '@/components/ui/use-toast';
 
 const STATUS_TABS = ['all', 'pending', 'live', 'sold', 'contacted', 'archived', 'rejected'] as const;
@@ -135,6 +135,7 @@ export default function AdminTable({ listings, onUpdate }: Props) {
               <TableHead>Seller</TableHead>
               <TableHead>Payment</TableHead>
               <TableHead>Left</TableHead>
+              <TableHead>Lender</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Actions</TableHead>
             </TableRow>
@@ -158,6 +159,7 @@ export default function AdminTable({ listings, onUpdate }: Props) {
                 </TableCell>
                 <TableCell className="whitespace-nowrap">{formatCurrency(l.monthly_payment)}/mo</TableCell>
                 <TableCell>{l.payments_left}</TableCell>
+                <TableCell className="text-sm">{l.lender}</TableCell>
                 <TableCell>{statusBadge(l.status)}</TableCell>
                 <TableCell>
                   <div className="flex flex-wrap gap-1">

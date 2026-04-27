@@ -9,7 +9,6 @@ const FILTERS = [
   { label: 'SUV / Truck',     fn: (l: PublicListing) => l.vehicle_type === 'SUV/Truck' },
   { label: 'Sedan / Coupe',   fn: (l: PublicListing) => l.vehicle_type === 'Sedan/Coupe' },
   { label: 'Under $400/mo',   fn: (l: PublicListing) => l.monthly_payment < 400 },
-  { label: 'Title-OK',        fn: (l: PublicListing) => l.comfort_level === 'yes' },
 ];
 
 export default function BrowseFilters({ listings }: { listings: PublicListing[] }) {

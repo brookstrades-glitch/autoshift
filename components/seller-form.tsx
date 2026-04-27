@@ -6,7 +6,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import PhotoUpload from './photo-upload';
 
@@ -23,7 +22,7 @@ export default function SellerForm() {
     first_name: '', last_name: '', phone: '', email: '',
     year: '', make: '', model: '', color: '', vehicle_type: '',
     mileage: '', monthly_payment: '', payments_left: '', lender: '', balance: '',
-    comfort_level: '', seller_reason: '',
+    seller_reason: '',
   });
 
   function update(field: string, value: string) {
@@ -296,34 +295,10 @@ export default function SellerForm() {
         </div>
       </div>
 
-      {/* ── Comfort Level ── */}
+      {/* ── Additional Info ── */}
       <div className={section}>
-        <fieldset>
-          <legend className={heading}>Comfort Level</legend>
-          <p className="text-sm text-muted-foreground mt-3 mb-4 leading-relaxed">
-            Are you comfortable with the buyer&apos;s name being added to the title?
-          </p>
-          <RadioGroup
-            value={form.comfort_level}
-            onValueChange={v => update('comfort_level', v)}
-            aria-required="true"
-            className="space-y-3"
-          >
-            <div className="flex items-center gap-3">
-              <RadioGroupItem value="yes" id="comfort_yes" />
-              <Label htmlFor="comfort_yes" className="mb-0 font-normal cursor-pointer">Yes — I&apos;m fine with it</Label>
-            </div>
-            <div className="flex items-center gap-3">
-              <RadioGroupItem value="maybe" id="comfort_maybe" />
-              <Label htmlFor="comfort_maybe" className="mb-0 font-normal cursor-pointer">Open to discussing it</Label>
-            </div>
-            <div className="flex items-center gap-3">
-              <RadioGroupItem value="no" id="comfort_no" />
-              <Label htmlFor="comfort_no" className="mb-0 font-normal cursor-pointer">No — payments only</Label>
-            </div>
-          </RadioGroup>
-        </fieldset>
-        <div className="pt-2">
+        <h2 className={heading}>Additional Info</h2>
+        <div>
           <Label htmlFor="seller_reason">Why are you selling? <span className="text-muted-foreground font-normal">(optional)</span></Label>
           <Textarea
             id="seller_reason"

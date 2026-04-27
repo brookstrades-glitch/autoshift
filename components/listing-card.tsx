@@ -4,7 +4,7 @@ import { PublicListing } from '@/lib/types';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { formatCurrency, comfortLabel } from '@/lib/utils';
+import { formatCurrency } from '@/lib/utils';
 import InquireDialog from './inquire-dialog';
 
 export default function ListingCard({ listing }: { listing: PublicListing }) {
@@ -87,7 +87,6 @@ export default function ListingCard({ listing }: { listing: PublicListing }) {
               )}
             </div>
 
-            <Badge variant="outline" className="text-[11px] px-2 py-0.5">{comfortLabel(listing.comfort_level)}</Badge>
           </CardContent>
 
           {!isSold && (

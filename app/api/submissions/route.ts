@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
     payments_left: Number(formData.get('payments_left')),
     lender: formData.get('lender') as string,
     balance: formData.get('balance') ? Number(formData.get('balance')) : null,
-    comfort_level: formData.get('comfort_level') as string,
+    comfort_level: 'maybe',
     seller_reason: formData.get('seller_reason') as string,
     photo_urls: photoUrls,
   };
