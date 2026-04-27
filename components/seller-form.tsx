@@ -13,6 +13,7 @@ export default function SellerForm() {
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [uploadStep, setUploadStep] = useState<'idle' | 'uploading' | 'saving'>('idle');
+  const [uploadProgress, setUploadProgress] = useState('');
   const [submitError, setSubmitError] = useState('');
   const [photoError, setPhotoError] = useState('');
   const [photos, setPhotos] = useState<File[]>([]);
@@ -37,6 +38,29 @@ export default function SellerForm() {
     return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
   }
 
+  async function compressImage(file: File): Promise<Blob> {
+    return new Promise((resolve) => {
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+      img.onload = () => {
+        URL.revokeObjectURL(url);
+        const MAX = 1920;
+        let { width, height } = img;
+        if (width > MAX || height > MAX) {
+          if (width > height) { height = Math.round(height * MAX / width); width = MAX; }
+          else { width = Math.round(width * MAX / height); height = MAX; }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        canvas.getContext('2d')!.drawImage(img, 0, 0, width, height);
+        canvas.toBlob(blob => resolve(blob ?? file), 'image/jpeg', 0.85);
+      };
+      img.onerror = () => resolve(file);
+      img.src = url;
+    });
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (photos.length === 0) { setPhotoError('At least one photo is required.'); return; }
@@ -45,20 +69,17 @@ export default function SellerForm() {
     setLoading(true);
 
     try {
-      // Step 1: upload photos directly from the browser to Supabase Storage.
-      // This bypasses the API route entirely, so Vercel's 4.5 MB serverless
-      // body limit never comes into play regardless of photo size.
       setUploadStep('uploading');
       const photoUrls: string[] = [];
 
       for (let i = 0; i < photos.length; i++) {
-        const photo = photos[i];
-        const ext = photo.name.split('.').pop()?.toLowerCase() ?? 'jpg';
-        const filename = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+        setUploadProgress(`Uploading photo ${i + 1} of ${photos.length}…`);
+        const compressed = await compressImage(photos[i]);
+        const filename = `${Date.now()}-${Math.random().toString(36).slice(2)}.jpg`;
 
         const { error } = await supabase.storage
           .from('vehicle-photos')
-          .upload(filename, photo);
+          .upload(filename, compressed, { contentType: 'image/jpeg' });
 
         if (error) {
           setSubmitError(`Photo ${i + 1} upload failed: ${error.message}`);
@@ -107,6 +128,7 @@ export default function SellerForm() {
     } finally {
       setLoading(false);
       setUploadStep('idle');
+      setUploadProgress('');
     }
   }
 
@@ -338,7 +360,7 @@ export default function SellerForm() {
       )}
 
       <Button type="submit" disabled={loading} className="w-full" size="lg">
-        {uploadStep === 'uploading' ? `Uploading photos…` :
+        {uploadStep === 'uploading' ? (uploadProgress || 'Uploading…') :
          uploadStep === 'saving'   ? 'Saving…' :
          'Submit Listing'}
       </Button>
