@@ -38,58 +38,6 @@ export default function SellerForm() {
     return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
   }
 
-  async function compressImage(file: File): Promise<Blob> {
-    // Skip compression for already-small files
-    if (file.size < 1 * 1024 * 1024) return file;
-
-    try {
-      return await new Promise<Blob>((resolve, reject) => {
-        const img = new Image();
-        const url = URL.createObjectURL(file);
-        const timeout = setTimeout(() => reject(new Error('timeout')), 30_000);
-
-        img.onload = () => {
-          clearTimeout(timeout);
-          URL.revokeObjectURL(url);
-          try {
-            const MAX = 1280;
-            let { width, height } = img;
-            if (width > MAX || height > MAX) {
-              if (width > height) { height = Math.round(height * MAX / width); width = MAX; }
-              else { width = Math.round(width * MAX / height); height = MAX; }
-            }
-            const canvas = document.createElement('canvas');
-            canvas.width = width;
-            canvas.height = height;
-            const ctx = canvas.getContext('2d');
-            if (!ctx) { reject(new Error('no-ctx')); return; }
-            ctx.drawImage(img, 0, 0, width, height);
-            canvas.toBlob(blob => {
-              // Release canvas memory immediately
-              canvas.width = 0;
-              canvas.height = 0;
-              // Only use compressed version if it's actually smaller
-              resolve(blob && blob.size < file.size ? blob : file);
-            }, 'image/jpeg', 0.82);
-          } catch (err) {
-            reject(err);
-          }
-        };
-
-        img.onerror = () => {
-          clearTimeout(timeout);
-          URL.revokeObjectURL(url);
-          reject(new Error('load-failed'));
-        };
-
-        img.src = url;
-      });
-    } catch {
-      // Any failure — canvas OOM, context unavailable, timeout — fall back to original
-      return file;
-    }
-  }
-
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (photos.length === 0) { setPhotoError('At least one photo is required.'); return; }
@@ -103,12 +51,13 @@ export default function SellerForm() {
 
       for (let i = 0; i < photos.length; i++) {
         setUploadProgress(`Uploading photo ${i + 1} of ${photos.length}…`);
-        const compressed = await compressImage(photos[i]);
-        const filename = `${Date.now()}-${Math.random().toString(36).slice(2)}.jpg`;
+        const file = photos[i];
+        const ext = file.name.split('.').pop()?.toLowerCase() ?? 'jpg';
+        const filename = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
 
         const { error } = await supabase.storage
           .from('vehicle-photos')
-          .upload(filename, compressed, { contentType: 'image/jpeg' });
+          .upload(filename, file, { contentType: file.type || 'image/jpeg' });
 
         if (error) {
           setSubmitError(`Photo ${i + 1} upload failed: ${error.message}`);
