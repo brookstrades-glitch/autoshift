@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Separator } from '@/components/ui/separator';
 import PhotoUpload from './photo-upload';
 import { useToast } from '@/components/ui/use-toast';
@@ -24,7 +23,6 @@ export default function AdminAddListing({ open, onOpenChange, onAdded }: Props) 
   const [form, setForm] = useState({
     year: '', make: '', model: '', color: '', vehicle_type: '',
     mileage: '', monthly_payment: '', payments_left: '', lender: '', balance: '',
-    comfort_level: '',
   });
 
   function update(field: string, value: string) {
@@ -44,7 +42,7 @@ export default function AdminAddListing({ open, onOpenChange, onAdded }: Props) 
       onAdded({ ...form, id: data.id, source: 'admin', status: 'live', photo_urls: [], created_at: new Date().toISOString() } as unknown as Submission);
       onOpenChange(false);
       setPhotos([]);
-      setForm({ year: '', make: '', model: '', color: '', vehicle_type: '', mileage: '', monthly_payment: '', payments_left: '', lender: '', balance: '', comfort_level: '' });
+      setForm({ year: '', make: '', model: '', color: '', vehicle_type: '', mileage: '', monthly_payment: '', payments_left: '', lender: '', balance: '' });
     } else {
       toast({ title: 'Error saving listing', variant: 'destructive' });
     }
@@ -87,15 +85,6 @@ export default function AdminAddListing({ open, onOpenChange, onAdded }: Props) 
             </div>
             <div><Label>Lender</Label><Input value={form.lender} onChange={e => update('lender', e.target.value)} /></div>
             <div><Label>Balance</Label><Input type="number" value={form.balance} onChange={e => update('balance', e.target.value)} /></div>
-          </div>
-          <Separator />
-          <div>
-            <Label>Comfort Level</Label>
-            <RadioGroup value={form.comfort_level} onValueChange={v => update('comfort_level', v)} className="mt-2">
-              <div className="flex items-center gap-2"><RadioGroupItem value="yes" id="a-yes" /><Label htmlFor="a-yes">Name on Title OK</Label></div>
-              <div className="flex items-center gap-2"><RadioGroupItem value="maybe" id="a-maybe" /><Label htmlFor="a-maybe">Open to Discuss</Label></div>
-              <div className="flex items-center gap-2"><RadioGroupItem value="no" id="a-no" /><Label htmlFor="a-no">No Title Transfer</Label></div>
-            </RadioGroup>
           </div>
           <Separator />
           <div><Label>Photos (min 1)</Label><PhotoUpload photos={photos} onPhotosChange={setPhotos} /></div>
