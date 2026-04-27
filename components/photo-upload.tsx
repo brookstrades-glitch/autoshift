@@ -14,7 +14,7 @@ export default function PhotoUpload({ photos, onPhotosChange, max = 8 }: Props) 
 
   function handleFiles(files: FileList | null) {
     if (!files) return;
-    const MAX_MB = 50;
+    const MAX_MB = 20;
     const valid = Array.from(files).filter(f => {
       if (f.size > MAX_MB * 1024 * 1024) {
         alert(`"${f.name}" is over ${MAX_MB} MB and can't be uploaded.`);
