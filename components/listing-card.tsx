@@ -13,14 +13,8 @@ export default function ListingCard({ listing }: { listing: PublicListing }) {
 
   return (
     <>
-      <div className={`group relative ${isSold ? 'opacity-50' : ''}`}>
-        {isSold && (
-          <div className="absolute top-3 right-3 z-10">
-            <Badge variant="secondary" className="text-xs font-bold tracking-wider uppercase">Sold</Badge>
-          </div>
-        )}
-
-        <Card className="overflow-hidden h-full flex flex-col transition-all duration-200 ease-out group-hover:-translate-y-1 group-hover:border-primary/25 group-hover:shadow-[0_12px_40px_rgba(0,0,0,0.5)]">
+      <div className={`group relative ${isSold ? 'pointer-events-none' : ''}`}>
+        <Card className={`overflow-hidden h-full flex flex-col transition-all duration-200 ease-out ${isSold ? 'opacity-55' : 'group-hover:-translate-y-1 group-hover:border-primary/25 group-hover:shadow-[0_12px_40px_rgba(0,0,0,0.5)]'}`}>
 
           {/* Photo */}
           {listing.photo_urls.length > 0 ? (
@@ -32,10 +26,23 @@ export default function ListingCard({ listing }: { listing: PublicListing }) {
                 loading="lazy"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
+              {/* Sold overlay — full-width banner across the image */}
+              {isSold && (
+                <div className="absolute inset-0 bg-black/55 flex items-center justify-center">
+                  <span className="bg-white/10 border border-white/30 text-white text-sm font-black uppercase tracking-[0.2em] px-5 py-2 rounded-full backdrop-blur-sm">
+                    Sold
+                  </span>
+                </div>
+              )}
             </div>
           ) : (
-            <div className="aspect-[16/10] bg-muted flex items-center justify-center">
+            <div className="aspect-[16/10] bg-muted flex items-center justify-center relative">
               <span className="text-muted-foreground/30 text-xs uppercase tracking-widest">No photo</span>
+              {isSold && (
+                <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                  <span className="text-white text-sm font-black uppercase tracking-[0.2em]">Sold</span>
+                </div>
+              )}
             </div>
           )}
 

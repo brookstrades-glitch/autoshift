@@ -47,8 +47,13 @@ export default function PhotoUpload({ photos, onPhotosChange, max = 8 }: Props) 
                   className="w-full h-full object-cover rounded-md"
                   onLoad={() => URL.revokeObjectURL(url)}
                 />
-                <button onClick={() => remove(i)} className="absolute top-1 right-1 bg-black/60 text-white rounded-full p-0.5">
-                  <X className="h-3 w-3" />
+                <button
+                  type="button"
+                  onClick={() => remove(i)}
+                  aria-label={`Remove photo ${i + 1}`}
+                  className="absolute -top-2 -right-2 bg-destructive text-white rounded-full p-1.5 shadow"
+                >
+                  <X className="h-3.5 w-3.5" />
                 </button>
               </div>
             );

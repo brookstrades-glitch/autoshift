@@ -15,7 +15,7 @@
     --secondary: 215 35% 23%;         /* #253350 */
     --secondary-foreground: 215 25% 88%;
     --muted: 215 35% 20%;
-    --muted-foreground: 215 20% 58%;  /* #8090af */
+    --muted-foreground: 215 20% 64%;  /* #94a3b8 — lifted for WCAG AA contrast */
     --accent: 221 60% 25%;
     --accent-foreground: 221 83% 75%;
     --destructive: 2 100% 59%;        /* #FF3B30 */
@@ -39,6 +39,10 @@
 }
 
 @layer utilities {
+  /* Hide scrollbar while keeping scroll functionality */
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
   /* Reusable focus treatment for all form controls */
   .focus-field {
     transition: border-color 0.15s ease, box-shadow 0.15s ease;

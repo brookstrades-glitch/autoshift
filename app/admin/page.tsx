@@ -14,8 +14,8 @@ async function getDashboardData() {
   return {
     stats: {
       pending: pending.count ?? 0,
-      live: live.count ?? 0,
-      sold: sold.count ?? 0,
+      live:    live.count ?? 0,
+      sold:    sold.count ?? 0,
       newInquiries: newInquiries.count ?? 0,
     },
     listings: allListings.data ?? [],

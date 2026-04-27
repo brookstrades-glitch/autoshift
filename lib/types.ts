@@ -1,4 +1,4 @@
-export type SubmissionStatus = 'pending' | 'live' | 'sold' | 'rejected' | 'contacted';
+export type SubmissionStatus = 'pending' | 'live' | 'sold' | 'rejected' | 'contacted' | 'archived';
 export type SubmissionSource = 'seller' | 'admin';
 export type ComfortLevel = 'yes' | 'maybe' | 'no';
 export type VehicleType = 'SUV/Truck' | 'Sedan/Coupe' | 'Van' | 'Other';

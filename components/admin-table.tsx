@@ -11,7 +11,7 @@ import { Label } from '@/components/ui/label';
 import { formatCurrency, comfortLabel } from '@/lib/utils';
 import { useToast } from '@/components/ui/use-toast';
 
-const STATUS_TABS = ['all', 'pending', 'live', 'sold', 'rejected'] as const;
+const STATUS_TABS = ['all', 'pending', 'live', 'sold', 'contacted', 'archived', 'rejected'] as const;
 
 interface Props {
   listings: Submission[];
@@ -53,18 +53,77 @@ export default function AdminTable({ listings, onUpdate }: Props) {
     setNotes(l.admin_notes ?? '');
   }
 
-  const statusBadge = (s: string) => {
-    const map: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
-      live: 'default', pending: 'outline', sold: 'secondary', rejected: 'destructive', contacted: 'default',
+  function statusBadge(s: string) {
+    const styles: Record<string, string> = {
+      live:      'bg-emerald-500/15 text-emerald-400 border-emerald-500/30',
+      pending:   'bg-amber-500/15 text-amber-400 border-amber-500/30',
+      sold:      'bg-blue-500/15 text-blue-400 border-blue-500/30',
+      contacted: 'bg-purple-500/15 text-purple-400 border-purple-500/30',
+      archived:  'bg-muted/50 text-muted-foreground border-border',
+      rejected:  'bg-destructive/15 text-destructive border-destructive/30',
     };
-    return <Badge variant={map[s] ?? 'outline'}>{s}</Badge>;
-  };
+    return (
+      <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold capitalize ${styles[s] ?? ''}`}>
+        {s}
+      </span>
+    );
+  }
+
+  function actions(l: Submission) {
+    switch (l.status) {
+      case 'pending':
+        return (
+          <>
+            <Button size="sm" onClick={() => updateStatus(l.id, 'live')}>Approve</Button>
+            <Button size="sm" variant="destructive" onClick={() => updateStatus(l.id, 'rejected')}>Reject</Button>
+          </>
+        );
+      case 'live':
+        return (
+          <>
+            <Button size="sm" variant="outline" onClick={() => updateStatus(l.id, 'contacted')}>Contacted</Button>
+            <Button size="sm" variant="secondary" onClick={() => updateStatus(l.id, 'sold')}>Sold</Button>
+            <Button size="sm" variant="destructive" onClick={() => updateStatus(l.id, 'archived')}>Archive</Button>
+          </>
+        );
+      case 'contacted':
+        return (
+          <>
+            <Button size="sm" variant="secondary" onClick={() => updateStatus(l.id, 'sold')}>Sold</Button>
+            <Button size="sm" variant="destructive" onClick={() => updateStatus(l.id, 'archived')}>Archive</Button>
+          </>
+        );
+      case 'sold':
+        return (
+          <Button size="sm" variant="destructive" onClick={() => updateStatus(l.id, 'archived')}>Archive</Button>
+        );
+      case 'rejected':
+        return (
+          <Button size="sm" variant="outline" onClick={() => updateStatus(l.id, 'pending')}>Restore</Button>
+        );
+      case 'archived':
+        return (
+          <Button size="sm" variant="outline" onClick={() => updateStatus(l.id, 'live')}>Restore</Button>
+        );
+      default:
+        return null;
+    }
+  }
 
   return (
     <>
       <Tabs value={tab} onValueChange={setTab}>
-        <TabsList>
-          {STATUS_TABS.map(t => <TabsTrigger key={t} value={t} className="capitalize">{t}</TabsTrigger>)}
+        <TabsList className="flex-wrap h-auto gap-1">
+          {STATUS_TABS.map(t => (
+            <TabsTrigger key={t} value={t} className="capitalize">
+              {t}
+              {t !== 'all' && (
+                <span className="ml-1.5 text-[10px] opacity-60">
+                  {listings.filter(l => l.status === t).length}
+                </span>
+              )}
+            </TabsTrigger>
+          ))}
         </TabsList>
       </Tabs>
 
@@ -73,35 +132,37 @@ export default function AdminTable({ listings, onUpdate }: Props) {
           <TableHeader>
             <TableRow>
               <TableHead>Vehicle</TableHead>
-              <TableHead>Source</TableHead>
               <TableHead>Seller</TableHead>
               <TableHead>Payment</TableHead>
               <TableHead>Left</TableHead>
-              <TableHead>Comfort</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
+            {filtered.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={6} className="text-center text-muted-foreground py-12">No listings</TableCell>
+              </TableRow>
+            )}
             {filtered.map(l => (
-              <TableRow key={l.id}>
-                <TableCell className="font-medium">{l.year} {l.make} {l.model}</TableCell>
-                <TableCell><Badge variant="outline">{l.source}</Badge></TableCell>
-                <TableCell className="text-sm">
-                  {l.source === 'seller' ? <><div>{l.first_name} {l.last_name}</div><div className="text-muted-foreground">{l.phone}</div></> : '—'}
+              <TableRow key={l.id} className={l.status === 'archived' || l.status === 'rejected' ? 'opacity-50' : ''}>
+                <TableCell className="font-medium whitespace-nowrap">
+                  {l.year} {l.make} {l.model}
+                  {l.source === 'admin' && <span className="ml-1.5 text-[10px] text-muted-foreground uppercase">admin</span>}
                 </TableCell>
-                <TableCell>{formatCurrency(l.monthly_payment)}/mo</TableCell>
+                <TableCell className="text-sm">
+                  {l.source === 'seller'
+                    ? <><div className="whitespace-nowrap">{l.first_name} {l.last_name}</div><div className="text-muted-foreground">{l.phone}</div></>
+                    : '—'}
+                </TableCell>
+                <TableCell className="whitespace-nowrap">{formatCurrency(l.monthly_payment)}/mo</TableCell>
                 <TableCell>{l.payments_left}</TableCell>
-                <TableCell className="text-xs">{comfortLabel(l.comfort_level)}</TableCell>
                 <TableCell>{statusBadge(l.status)}</TableCell>
                 <TableCell>
                   <div className="flex flex-wrap gap-1">
                     <Button size="sm" variant="outline" onClick={() => openDetail(l)}>Details</Button>
-                    {l.status === 'pending' && <Button size="sm" onClick={() => updateStatus(l.id, 'live')}>Approve</Button>}
-                    {l.status !== 'rejected' && <Button size="sm" variant="destructive" onClick={() => updateStatus(l.id, 'rejected')}>Reject</Button>}
-                    {l.status !== 'sold' && l.status !== 'rejected' && <Button size="sm" variant="secondary" onClick={() => updateStatus(l.id, 'sold')}>Sold</Button>}
-                    {l.status !== 'contacted' && l.status === 'live' && <Button size="sm" variant="outline" onClick={() => updateStatus(l.id, 'contacted')}>Contacted</Button>}
-                    {l.status === 'rejected' && <Button size="sm" variant="outline" onClick={() => updateStatus(l.id, 'live')}>Restore</Button>}
+                    {actions(l)}
                   </div>
                 </TableCell>
               </TableRow>
@@ -112,8 +173,10 @@ export default function AdminTable({ listings, onUpdate }: Props) {
 
       <Dialog open={!!detail} onOpenChange={v => !v && setDetail(null)}>
         {detail && (
-          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-            <DialogHeader><DialogTitle>{detail.year} {detail.make} {detail.model}</DialogTitle></DialogHeader>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>{detail.year} {detail.make} {detail.model}</DialogTitle>
+            </DialogHeader>
             <div className="space-y-4">
               {detail.photo_urls.length > 0 && (
                 <div className="grid grid-cols-3 gap-2">
@@ -124,17 +187,23 @@ export default function AdminTable({ listings, onUpdate }: Props) {
                   ))}
                 </div>
               )}
-              <div className="grid grid-cols-2 gap-2 text-sm">
+              <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
                 {detail.first_name && <><span className="text-muted-foreground">Name</span><span>{detail.first_name} {detail.last_name}</span></>}
                 {detail.phone && <><span className="text-muted-foreground">Phone</span><span>{detail.phone}</span></>}
                 {detail.email && <><span className="text-muted-foreground">Email</span><span>{detail.email}</span></>}
                 <span className="text-muted-foreground">Lender</span><span>{detail.lender}</span>
                 {detail.balance && <><span className="text-muted-foreground">Balance</span><span>{formatCurrency(detail.balance)}</span></>}
+                {detail.mileage && <><span className="text-muted-foreground">Mileage</span><span>{detail.mileage.toLocaleString()} mi</span></>}
                 {detail.seller_reason && <><span className="text-muted-foreground">Reason</span><span>{detail.seller_reason}</span></>}
               </div>
               <div>
-                <Label>Admin Notes</Label>
-                <Textarea value={notes} onChange={e => setNotes(e.target.value)} onBlur={() => saveNotes(detail.id)} className="mt-1" />
+                <Label htmlFor="admin-notes">Admin Notes</Label>
+                <Textarea
+                  id="admin-notes"
+                  value={notes}
+                  onChange={e => setNotes(e.target.value)}
+                  onBlur={() => saveNotes(detail.id)}
+                />
                 <Button size="sm" className="mt-2" onClick={() => saveNotes(detail.id)}>Save Notes</Button>
               </div>
             </div>

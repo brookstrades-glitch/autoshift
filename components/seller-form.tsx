@@ -1,5 +1,6 @@
 'use client';
 import { useState, useRef } from 'react';
+import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -12,6 +13,8 @@ import PhotoUpload from './photo-upload';
 export default function SellerForm() {
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [uploadStep, setUploadStep] = useState<'idle' | 'uploading' | 'saving'>('idle');
+  const [submitError, setSubmitError] = useState('');
   const [photoError, setPhotoError] = useState('');
   const [photos, setPhotos] = useState<File[]>([]);
   const honeypotRef = useRef<HTMLInputElement>(null);
@@ -27,22 +30,75 @@ export default function SellerForm() {
     setForm(prev => ({ ...prev, [field]: value }));
   }
 
-  async function handleSubmit() {
+  function formatPhone(raw: string): string {
+    const digits = raw.replace(/\D/g, '').slice(0, 10);
+    if (digits.length === 0) return '';
+    if (digits.length <= 3) return `(${digits}`;
+    if (digits.length <= 6) return `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
+    return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
     if (photos.length === 0) { setPhotoError('At least one photo is required.'); return; }
     setPhotoError('');
+    setSubmitError('');
     setLoading(true);
-    const fd = new FormData();
-    Object.entries(form).forEach(([k, v]) => fd.append(k, v));
-    if (honeypotRef.current) fd.append('website', honeypotRef.current.value);
-    photos.forEach(p => fd.append('photos', p));
-    await fetch('/api/submissions', { method: 'POST', body: fd });
-    setSubmitted(true);
-    setLoading(false);
+
+    try {
+      // Step 1: upload photos directly from the browser to Supabase Storage.
+      // This bypasses the API route entirely, so Vercel's 4.5 MB serverless
+      // body limit never comes into play regardless of photo size.
+      setUploadStep('uploading');
+      const photoUrls: string[] = [];
+
+      for (let i = 0; i < photos.length; i++) {
+        const photo = photos[i];
+        const ext = photo.name.split('.').pop()?.toLowerCase() ?? 'jpg';
+        const filename = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+
+        const { error } = await supabase.storage
+          .from('vehicle-photos')
+          .upload(filename, photo);
+
+        if (error) {
+          setSubmitError(`Photo ${i + 1} upload failed: ${error.message}`);
+          return;
+        }
+
+        const { data: urlData } = supabase.storage
+          .from('vehicle-photos')
+          .getPublicUrl(filename);
+
+        photoUrls.push(urlData.publicUrl);
+      }
+
+      // Step 2: send only form fields + the already-uploaded URLs to the API.
+      // No files in the body — tiny request.
+      setUploadStep('saving');
+      const fd = new FormData();
+      Object.entries(form).forEach(([k, v]) => fd.append(k, v));
+      if (honeypotRef.current) fd.append('website', honeypotRef.current.value);
+      photoUrls.forEach(url => fd.append('photo_urls', url));
+
+      const res = await fetch('/api/submissions', { method: 'POST', body: fd });
+      const body = await res.json();
+      if (!res.ok) {
+        setSubmitError(body.error ?? `Submission failed (${res.status}). Please try again.`);
+        return;
+      }
+      setSubmitted(true);
+    } catch {
+      setSubmitError('Network error — please check your connection and try again.');
+    } finally {
+      setLoading(false);
+      setUploadStep('idle');
+    }
   }
 
   if (submitted) {
     return (
-      <Alert>
+      <Alert role="status">
         <AlertDescription>
           Received. We will review and reach out within 48 hours. Nothing goes live until we contact you.
         </AlertDescription>
@@ -50,82 +106,252 @@ export default function SellerForm() {
     );
   }
 
-  const sectionClass = "rounded-xl border border-border bg-card p-6 space-y-4";
-  const sectionHeading = "text-xs font-semibold uppercase tracking-widest text-muted-foreground";
+  const section = "rounded-xl border border-border bg-card p-6 space-y-5";
+  const heading = "text-sm font-semibold uppercase tracking-widest text-muted-foreground";
 
   return (
-    <div className="space-y-4">
-      {/* Honeypot */}
-      <input ref={honeypotRef} name="website" type="text" style={{ position: 'absolute', left: '-9999px' }} tabIndex={-1} autoComplete="off" />
+    <form onSubmit={handleSubmit} noValidate aria-label="List your car note" className="space-y-4">
+      {/* Honeypot — hidden from real users and assistive tech */}
+      <input ref={honeypotRef} name="website" type="text" style={{ position: 'absolute', left: '-9999px' }} tabIndex={-1} autoComplete="off" aria-hidden="true" />
 
-      <div className={sectionClass}>
-        <h2 className={sectionHeading}>Your Info</h2>
+      <p className="text-xs text-muted-foreground">
+        Fields marked <span aria-hidden="true" className="text-destructive font-semibold">*</span>
+        <span className="sr-only">with an asterisk</span> are required.
+      </p>
+
+      {/* ── Your Info ── */}
+      <div className={section}>
+        <h2 className={heading} id="section-your-info">Your Info</h2>
         <div className="grid grid-cols-2 gap-4">
-          <div><Label>First Name</Label><Input value={form.first_name} onChange={e => update('first_name', e.target.value)} /></div>
-          <div><Label>Last Name</Label><Input value={form.last_name} onChange={e => update('last_name', e.target.value)} /></div>
+          <div>
+            <Label htmlFor="first_name">First Name <span aria-hidden="true" className="text-destructive">*</span></Label>
+            <Input
+              id="first_name"
+              value={form.first_name}
+              onChange={e => update('first_name', e.target.value)}
+              autoComplete="given-name"
+              required
+            />
+          </div>
+          <div>
+            <Label htmlFor="last_name">Last Name <span aria-hidden="true" className="text-destructive">*</span></Label>
+            <Input
+              id="last_name"
+              value={form.last_name}
+              onChange={e => update('last_name', e.target.value)}
+              autoComplete="family-name"
+              required
+            />
+          </div>
         </div>
-        <div><Label>Phone</Label><Input value={form.phone} onChange={e => update('phone', e.target.value)} /></div>
-        <div><Label>Email</Label><Input type="email" value={form.email} onChange={e => update('email', e.target.value)} /></div>
+        <div>
+          <Label htmlFor="phone">Phone <span aria-hidden="true" className="text-destructive">*</span></Label>
+          <Input
+            id="phone"
+            type="tel"
+            value={form.phone}
+            onChange={e => update('phone', formatPhone(e.target.value))}
+            autoComplete="tel"
+            inputMode="tel"
+            placeholder="(555) 555-5555"
+            required
+          />
+        </div>
+        <div>
+          <Label htmlFor="email">Email <span aria-hidden="true" className="text-destructive">*</span></Label>
+          <Input
+            id="email"
+            type="email"
+            value={form.email}
+            onChange={e => update('email', e.target.value)}
+            autoComplete="email"
+            placeholder="you@example.com"
+            required
+          />
+        </div>
       </div>
 
-      <div className={sectionClass}>
-        <h2 className={sectionHeading}>Vehicle Details</h2>
+      {/* ── Vehicle Details ── */}
+      <div className={section}>
+        <h2 className={heading} id="section-vehicle">Vehicle Details</h2>
         <div className="grid grid-cols-3 gap-4">
-          <div><Label>Year</Label><Input type="number" value={form.year} onChange={e => update('year', e.target.value)} /></div>
-          <div><Label>Make</Label><Input value={form.make} onChange={e => update('make', e.target.value)} /></div>
-          <div><Label>Model</Label><Input value={form.model} onChange={e => update('model', e.target.value)} /></div>
+          <div>
+            <Label htmlFor="year">Year <span aria-hidden="true" className="text-destructive">*</span></Label>
+            <Input
+              id="year"
+              value={form.year}
+              onChange={e => update('year', e.target.value)}
+              inputMode="numeric"
+              pattern="[0-9]{4}"
+              maxLength={4}
+              placeholder="2022"
+              required
+            />
+          </div>
+          <div>
+            <Label htmlFor="make">Make <span aria-hidden="true" className="text-destructive">*</span></Label>
+            <Input
+              id="make"
+              value={form.make}
+              onChange={e => update('make', e.target.value)}
+              placeholder="Toyota"
+              required
+            />
+          </div>
+          <div>
+            <Label htmlFor="model">Model <span aria-hidden="true" className="text-destructive">*</span></Label>
+            <Input
+              id="model"
+              value={form.model}
+              onChange={e => update('model', e.target.value)}
+              placeholder="Camry"
+              required
+            />
+          </div>
         </div>
         <div className="grid grid-cols-2 gap-4">
-          <div><Label>Color</Label><Input value={form.color} onChange={e => update('color', e.target.value)} /></div>
           <div>
-            <Label>Vehicle Type</Label>
-            <Select value={form.vehicle_type} onValueChange={v => update('vehicle_type', v)}>
-              <SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger>
+            <Label htmlFor="color">Color <span aria-hidden="true" className="text-destructive">*</span></Label>
+            <Input
+              id="color"
+              value={form.color}
+              onChange={e => update('color', e.target.value)}
+              placeholder="Black"
+              required
+            />
+          </div>
+          <div>
+            <Label htmlFor="vehicle_type">Vehicle Type <span aria-hidden="true" className="text-destructive">*</span></Label>
+            <Select value={form.vehicle_type} onValueChange={v => update('vehicle_type', v)} required>
+              <SelectTrigger id="vehicle_type" aria-required="true">
+                <SelectValue placeholder="Select type" />
+              </SelectTrigger>
               <SelectContent>
-                <SelectItem value="SUV/Truck">SUV/Truck</SelectItem>
-                <SelectItem value="Sedan/Coupe">Sedan/Coupe</SelectItem>
+                <SelectItem value="SUV/Truck">SUV / Truck</SelectItem>
+                <SelectItem value="Sedan/Coupe">Sedan / Coupe</SelectItem>
                 <SelectItem value="Van">Van</SelectItem>
                 <SelectItem value="Other">Other</SelectItem>
               </SelectContent>
             </Select>
           </div>
         </div>
-        <div><Label>Mileage (optional)</Label><Input type="number" value={form.mileage} onChange={e => update('mileage', e.target.value)} /></div>
-      </div>
-
-      <div className={sectionClass}>
-        <h2 className={sectionHeading}>Loan Details</h2>
-        <div className="grid grid-cols-2 gap-4">
-          <div><Label>Monthly Payment ($)</Label><Input type="number" value={form.monthly_payment} onChange={e => update('monthly_payment', e.target.value)} /></div>
-          <div><Label>Payments Left</Label><Input type="number" value={form.payments_left} onChange={e => update('payments_left', e.target.value)} /></div>
-        </div>
-        <div><Label>Lender</Label><Input value={form.lender} onChange={e => update('lender', e.target.value)} /></div>
-        <div><Label>Remaining Balance (optional)</Label><Input type="number" value={form.balance} onChange={e => update('balance', e.target.value)} /></div>
-      </div>
-
-      <div className={sectionClass}>
-        <h2 className={sectionHeading}>Comfort Level</h2>
-        <p className="text-sm text-muted-foreground">Are you comfortable with the buyer's name being added to the title?</p>
-        <RadioGroup value={form.comfort_level} onValueChange={v => update('comfort_level', v)}>
-          <div className="flex items-center gap-2"><RadioGroupItem value="yes" id="yes" /><Label htmlFor="yes">Yes — I&apos;m fine with it</Label></div>
-          <div className="flex items-center gap-2"><RadioGroupItem value="maybe" id="maybe" /><Label htmlFor="maybe">Open to discussing it</Label></div>
-          <div className="flex items-center gap-2"><RadioGroupItem value="no" id="no" /><Label htmlFor="no">No — payments only</Label></div>
-        </RadioGroup>
         <div>
-          <Label>Why are you selling? (optional)</Label>
-          <Textarea value={form.seller_reason} onChange={e => update('seller_reason', e.target.value)} />
+          <Label htmlFor="mileage">Mileage <span className="text-muted-foreground font-normal">(optional)</span></Label>
+          <Input
+            id="mileage"
+            value={form.mileage}
+            onChange={e => update('mileage', e.target.value)}
+            inputMode="numeric"
+            placeholder="45,000"
+          />
         </div>
       </div>
 
-      <div className={sectionClass}>
-        <h2 className={sectionHeading}>Photos</h2>
-        <PhotoUpload photos={photos} onPhotosChange={setPhotos} />
-        {photoError && <p className="text-sm text-destructive">{photoError}</p>}
+      {/* ── Loan Details ── */}
+      <div className={section}>
+        <h2 className={heading} id="section-loan">Loan Details</h2>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <Label htmlFor="monthly_payment">Monthly Payment ($) <span aria-hidden="true" className="text-destructive">*</span></Label>
+            <Input
+              id="monthly_payment"
+              value={form.monthly_payment}
+              onChange={e => update('monthly_payment', e.target.value)}
+              inputMode="numeric"
+              placeholder="450"
+              required
+            />
+          </div>
+          <div>
+            <Label htmlFor="payments_left">Payments Left <span aria-hidden="true" className="text-destructive">*</span></Label>
+            <Input
+              id="payments_left"
+              value={form.payments_left}
+              onChange={e => update('payments_left', e.target.value)}
+              inputMode="numeric"
+              placeholder="36"
+              required
+            />
+          </div>
+        </div>
+        <div>
+          <Label htmlFor="lender">Lender <span aria-hidden="true" className="text-destructive">*</span></Label>
+          <Input
+            id="lender"
+            value={form.lender}
+            onChange={e => update('lender', e.target.value)}
+            placeholder="Capital One, Chase, etc."
+            required
+          />
+        </div>
+        <div>
+          <Label htmlFor="balance">Remaining Balance ($) <span className="text-muted-foreground font-normal">(optional)</span></Label>
+          <Input
+            id="balance"
+            value={form.balance}
+            onChange={e => update('balance', e.target.value)}
+            inputMode="numeric"
+            placeholder="18,000"
+          />
+        </div>
       </div>
 
-      <Button onClick={handleSubmit} disabled={loading} className="w-full" size="lg">
-        {loading ? 'Submitting...' : 'Submit Listing'}
+      {/* ── Comfort Level ── */}
+      <div className={section}>
+        <fieldset>
+          <legend className={heading}>Comfort Level</legend>
+          <p className="text-sm text-muted-foreground mt-3 mb-4 leading-relaxed">
+            Are you comfortable with the buyer&apos;s name being added to the title?
+          </p>
+          <RadioGroup
+            value={form.comfort_level}
+            onValueChange={v => update('comfort_level', v)}
+            aria-required="true"
+            className="space-y-3"
+          >
+            <div className="flex items-center gap-3">
+              <RadioGroupItem value="yes" id="comfort_yes" />
+              <Label htmlFor="comfort_yes" className="mb-0 font-normal cursor-pointer">Yes — I&apos;m fine with it</Label>
+            </div>
+            <div className="flex items-center gap-3">
+              <RadioGroupItem value="maybe" id="comfort_maybe" />
+              <Label htmlFor="comfort_maybe" className="mb-0 font-normal cursor-pointer">Open to discussing it</Label>
+            </div>
+            <div className="flex items-center gap-3">
+              <RadioGroupItem value="no" id="comfort_no" />
+              <Label htmlFor="comfort_no" className="mb-0 font-normal cursor-pointer">No — payments only</Label>
+            </div>
+          </RadioGroup>
+        </fieldset>
+        <div className="pt-2">
+          <Label htmlFor="seller_reason">Why are you selling? <span className="text-muted-foreground font-normal">(optional)</span></Label>
+          <Textarea
+            id="seller_reason"
+            value={form.seller_reason}
+            onChange={e => update('seller_reason', e.target.value)}
+            placeholder="Moving, upgraded, financial change…"
+          />
+        </div>
+      </div>
+
+      {/* ── Photos ── */}
+      <div className={section}>
+        <h2 className={heading} id="section-photos">Photos</h2>
+        <PhotoUpload photos={photos} onPhotosChange={setPhotos} />
+        {photoError && (
+          <p role="alert" className="text-sm text-destructive mt-1">{photoError}</p>
+        )}
+      </div>
+
+      {submitError && (
+        <p role="alert" className="text-sm text-destructive text-center px-1">{submitError}</p>
+      )}
+
+      <Button type="submit" disabled={loading} className="w-full" size="lg">
+        {uploadStep === 'uploading' ? `Uploading photos…` :
+         uploadStep === 'saving'   ? 'Saving…' :
+         'Submit Listing'}
       </Button>
-    </div>
+    </form>
   );
 }

@@ -22,16 +22,21 @@ export default function BrowseFilters({ listings }: { listings: PublicListing[] 
 
   return (
     <div>
-      {/* Filter bar */}
-      <div className="flex items-center gap-2 flex-wrap mb-6">
+      {/* Filter bar — horizontal scroll on mobile, wraps on desktop */}
+      <div
+        className="no-scrollbar flex items-center gap-2 overflow-x-auto pb-1 -mx-4 px-4 sm:mx-0 sm:px-0 sm:flex-wrap mb-2 sm:mb-6"
+        role="group"
+        aria-label="Filter listings"
+      >
         {FILTERS.map((f, i) => {
           const count = listings.filter(f.fn).length;
           return (
             <button
               key={f.label}
               onClick={() => setActive(i)}
+              aria-pressed={active === i}
               className={[
-                'inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium transition-all duration-150',
+                'inline-flex flex-shrink-0 items-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium transition-all duration-150',
                 active === i
                   ? 'bg-primary text-white shadow-[0_0_0_1px_hsl(var(--primary))]'
                   : 'border border-border text-muted-foreground hover:border-primary/40 hover:text-foreground',
@@ -47,12 +52,12 @@ export default function BrowseFilters({ listings }: { listings: PublicListing[] 
             </button>
           );
         })}
-
-        {/* Result count — right aligned on larger screens */}
-        <span className="ml-auto text-sm text-muted-foreground hidden sm:block">
-          {filtered.length} listing{filtered.length !== 1 ? 's' : ''}
-        </span>
       </div>
+
+      {/* Result count — always visible, below bar on mobile */}
+      <p className="text-sm text-muted-foreground mb-5">
+        {filtered.length} listing{filtered.length !== 1 ? 's' : ''}
+      </p>
 
       {/* Grid */}
       {filtered.length === 0 ? (
