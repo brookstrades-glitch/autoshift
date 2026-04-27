@@ -37,14 +37,22 @@ export default function PhotoUpload({ photos, onPhotosChange, max = 8 }: Props) 
       <input ref={inputRef} type="file" accept="image/*" multiple className="hidden" onChange={e => handleFiles(e.target.files)} />
       {photos.length > 0 && (
         <div className="grid grid-cols-3 gap-2">
-          {photos.map((file, i) => (
-            <div key={i} className="relative aspect-square">
-              <img src={URL.createObjectURL(file)} alt="" className="w-full h-full object-cover rounded-md" />
-              <button onClick={() => remove(i)} className="absolute top-1 right-1 bg-black/60 text-white rounded-full p-0.5">
-                <X className="h-3 w-3" />
-              </button>
-            </div>
-          ))}
+          {photos.map((file, i) => {
+            const url = URL.createObjectURL(file);
+            return (
+              <div key={i} className="relative aspect-square">
+                <img
+                  src={url}
+                  alt=""
+                  className="w-full h-full object-cover rounded-md"
+                  onLoad={() => URL.revokeObjectURL(url)}
+                />
+                <button onClick={() => remove(i)} className="absolute top-1 right-1 bg-black/60 text-white rounded-full p-0.5">
+                  <X className="h-3 w-3" />
+                </button>
+              </div>
+            );
+          })}
         </div>
       )}
     </div>
