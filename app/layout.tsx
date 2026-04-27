@@ -6,6 +6,7 @@ import { Toaster } from '@/components/ui/toaster';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://autoshifthouston.com'),
   title: 'AutoShift Houston — Car Note Takeovers',
   description: 'Browse and list subject-to car deals in Houston.',
 };

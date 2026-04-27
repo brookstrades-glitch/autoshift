@@ -1,4 +1,19 @@
 /** @type {import('next').NextConfig} */
-const nextConfig = { images: { remotePatterns: [{ protocol: 'https', hostname: '*.supabase.co', pathname: '/storage/v1/object/public/**' }] } };
-export default nextConfig;// cache-bust Sun Apr 26 16:59:42 CDT 2026
-// cache-bust Sun Apr 26 20:43:00 CDT 2026
+const nextConfig = {
+  images: {
+    remotePatterns: [
+      { protocol: 'https', hostname: '*.supabase.co', pathname: '/storage/v1/object/public/**' },
+    ],
+  },
+  async redirects() {
+    return [
+      {
+        source: '/:path*',
+        has: [{ type: 'host', value: 'www.autoshifthouston.com' }],
+        destination: 'https://autoshifthouston.com/:path*',
+        permanent: true,
+      },
+    ];
+  },
+};
+export default nextConfig;
