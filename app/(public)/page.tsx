@@ -25,17 +25,21 @@ export default async function HomePage() {
     <>
       {/* ── Hero ─────────────────────────────────────────────── */}
       <section className="relative min-h-[88svh] flex flex-col justify-end overflow-hidden">
-        {/* Background photo — brightness + desaturate so any car image
-            blends into the dark navy theme */}
-        <img
-          src="https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=1920&q=80"
-          alt=""
+        {/* Background video — autoplay, muted, looping */}
+        <video
+          autoPlay
+          muted
+          loop
+          playsInline
+          poster="https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=1920&q=80"
           aria-hidden="true"
-          loading="eager"
-          fetchPriority="high"
           className="absolute inset-0 w-full h-full object-cover object-center"
-          style={{ filter: 'brightness(0.42) saturate(0.7)' }}
-        />
+          style={{ filter: 'brightness(0.55) saturate(0.65)' }}
+        >
+          <source src="/videos/hero-bg.mp4" type="video/mp4" />
+        </video>
+        {/* Dark scrim */}
+        <div className="absolute inset-0" style={{ background: 'rgba(0,0,0,0.55)' }} />
         {/* Gradient: strong at bottom (page color), dissolves upward */}
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/55 to-transparent" />
         {/* Left edge vignette for text pop on wide screens */}
