@@ -4,49 +4,26 @@
 
 @layer base {
   :root {
-    /* Apple HIG light — iOS system colors */
-    --background: 240 17% 97%;       /* #F2F2F7 grouped background */
-    --foreground: 0 0% 9%;
-    --card: 0 0% 100%;
-    --card-foreground: 0 0% 9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 9%;
-    --primary: 211 100% 50%;         /* #007AFF Apple Blue */
+    --background: 215 49% 10%;        /* #0d1526 deep navy page */
+    --foreground: 215 25% 88%;        /* #d8e1f0 */
+    --card: 215 40% 15%;              /* #162033 elevated cards/sections */
+    --card-foreground: 215 25% 88%;
+    --popover: 215 40% 15%;
+    --popover-foreground: 215 25% 88%;
+    --primary: 221 83% 53%;           /* #2563eb brand blue */
     --primary-foreground: 0 0% 100%;
-    --secondary: 240 5% 93%;
-    --secondary-foreground: 0 0% 9%;
-    --muted: 240 5% 93%;
-    --muted-foreground: 240 2% 56%;  /* #8E8E93 Apple secondary label */
-    --accent: 211 100% 95%;
-    --accent-foreground: 211 100% 38%;
-    --destructive: 2 100% 59%;       /* #FF3B30 Apple Red */
+    --secondary: 215 35% 23%;         /* #253350 */
+    --secondary-foreground: 215 25% 88%;
+    --muted: 215 35% 20%;
+    --muted-foreground: 215 20% 58%;  /* #8090af */
+    --accent: 221 60% 25%;
+    --accent-foreground: 221 83% 75%;
+    --destructive: 2 100% 59%;        /* #FF3B30 */
     --destructive-foreground: 0 0% 100%;
-    --border: 240 6% 90%;
-    --input: 240 6% 90%;
-    --ring: 211 100% 50%;
-    --radius: 1rem;                  /* 16px — Apple standard card radius */
-  }
-  .dark {
-    /* Apple HIG dark — iOS dark mode */
-    --background: 0 0% 0%;           /* #000000 */
-    --foreground: 0 0% 100%;
-    --card: 0 0% 11%;                /* #1C1C1E */
-    --card-foreground: 0 0% 100%;
-    --popover: 0 0% 11%;
-    --popover-foreground: 0 0% 100%;
-    --primary: 211 100% 50%;         /* same Apple Blue */
-    --primary-foreground: 0 0% 100%;
-    --secondary: 0 0% 17%;           /* #2C2C2E */
-    --secondary-foreground: 0 0% 100%;
-    --muted: 0 0% 17%;
-    --muted-foreground: 240 2% 62%;
-    --accent: 211 100% 20%;
-    --accent-foreground: 211 100% 70%;
-    --destructive: 2 100% 59%;
-    --destructive-foreground: 0 0% 100%;
-    --border: 0 0% 22%;              /* #383838 */
-    --input: 0 0% 17%;
-    --ring: 211 100% 50%;
+    --border: 215 32% 24%;            /* #263348 subtle dividers */
+    --input: 215 32% 30%;             /* #2d3f57 visible input borders */
+    --ring: 221 83% 53%;
+    --radius: 0.75rem;
   }
 }
 
@@ -57,5 +34,18 @@
     font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+@layer utilities {
+  /* Reusable focus treatment for all form controls */
+  .focus-field {
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+  .focus-field:focus,
+  .focus-field:focus-visible {
+    outline: none;
+    border-color: hsl(var(--primary));
+    box-shadow: 0 0 0 3px hsl(var(--primary) / 0.18);
   }
 }

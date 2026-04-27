@@ -7,7 +7,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Separator } from '@/components/ui/separator';
 import PhotoUpload from './photo-upload';
 
 export default function SellerForm() {
@@ -51,13 +50,16 @@ export default function SellerForm() {
     );
   }
 
+  const sectionClass = "rounded-xl border border-border bg-card p-6 space-y-4";
+  const sectionHeading = "text-xs font-semibold uppercase tracking-widest text-muted-foreground";
+
   return (
-    <div className="space-y-8">
+    <div className="space-y-4">
       {/* Honeypot */}
       <input ref={honeypotRef} name="website" type="text" style={{ position: 'absolute', left: '-9999px' }} tabIndex={-1} autoComplete="off" />
 
-      <div className="space-y-4">
-        <h2 className="font-semibold text-lg">Your Info</h2>
+      <div className={sectionClass}>
+        <h2 className={sectionHeading}>Your Info</h2>
         <div className="grid grid-cols-2 gap-4">
           <div><Label>First Name</Label><Input value={form.first_name} onChange={e => update('first_name', e.target.value)} /></div>
           <div><Label>Last Name</Label><Input value={form.last_name} onChange={e => update('last_name', e.target.value)} /></div>
@@ -66,10 +68,8 @@ export default function SellerForm() {
         <div><Label>Email</Label><Input type="email" value={form.email} onChange={e => update('email', e.target.value)} /></div>
       </div>
 
-      <Separator />
-
-      <div className="space-y-4">
-        <h2 className="font-semibold text-lg">Vehicle Details</h2>
+      <div className={sectionClass}>
+        <h2 className={sectionHeading}>Vehicle Details</h2>
         <div className="grid grid-cols-3 gap-4">
           <div><Label>Year</Label><Input type="number" value={form.year} onChange={e => update('year', e.target.value)} /></div>
           <div><Label>Make</Label><Input value={form.make} onChange={e => update('make', e.target.value)} /></div>
@@ -93,10 +93,8 @@ export default function SellerForm() {
         <div><Label>Mileage (optional)</Label><Input type="number" value={form.mileage} onChange={e => update('mileage', e.target.value)} /></div>
       </div>
 
-      <Separator />
-
-      <div className="space-y-4">
-        <h2 className="font-semibold text-lg">Loan Details</h2>
+      <div className={sectionClass}>
+        <h2 className={sectionHeading}>Loan Details</h2>
         <div className="grid grid-cols-2 gap-4">
           <div><Label>Monthly Payment ($)</Label><Input type="number" value={form.monthly_payment} onChange={e => update('monthly_payment', e.target.value)} /></div>
           <div><Label>Payments Left</Label><Input type="number" value={form.payments_left} onChange={e => update('payments_left', e.target.value)} /></div>
@@ -105,10 +103,8 @@ export default function SellerForm() {
         <div><Label>Remaining Balance (optional)</Label><Input type="number" value={form.balance} onChange={e => update('balance', e.target.value)} /></div>
       </div>
 
-      <Separator />
-
-      <div className="space-y-4">
-        <h2 className="font-semibold text-lg">Comfort Level</h2>
+      <div className={sectionClass}>
+        <h2 className={sectionHeading}>Comfort Level</h2>
         <p className="text-sm text-muted-foreground">Are you comfortable with the buyer's name being added to the title?</p>
         <RadioGroup value={form.comfort_level} onValueChange={v => update('comfort_level', v)}>
           <div className="flex items-center gap-2"><RadioGroupItem value="yes" id="yes" /><Label htmlFor="yes">Yes — I&apos;m fine with it</Label></div>
@@ -121,10 +117,8 @@ export default function SellerForm() {
         </div>
       </div>
 
-      <Separator />
-
-      <div className="space-y-4">
-        <h2 className="font-semibold text-lg">Photos</h2>
+      <div className={sectionClass}>
+        <h2 className={sectionHeading}>Photos</h2>
         <PhotoUpload photos={photos} onPhotosChange={setPhotos} />
         {photoError && <p className="text-sm text-destructive">{photoError}</p>}
       </div>

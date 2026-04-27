@@ -4,7 +4,7 @@ import { Car } from 'lucide-react';
 
 export default function Nav() {
   return (
-    <header className="sticky top-0 z-50 border-b border-black/5 bg-white/80 backdrop-blur-xl dark:bg-black/80 dark:border-white/10">
+    <header className="sticky top-0 z-50 border-b border-border bg-card">
       <div className="container mx-auto px-4 h-14 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2 font-bold text-lg">
           <Car className="h-5 w-5" />
