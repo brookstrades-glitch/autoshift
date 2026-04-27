@@ -72,23 +72,38 @@ export default function SellerForm() {
         photoUrls.push(urlData.publicUrl);
       }
 
-      // Step 2: send only form fields + the already-uploaded URLs to the API.
-      // No files in the body — tiny request.
+      // Step 2: send form fields + URLs as JSON with a 30-second timeout.
       setUploadStep('saving');
-      const fd = new FormData();
-      Object.entries(form).forEach(([k, v]) => fd.append(k, v));
-      if (honeypotRef.current) fd.append('website', honeypotRef.current.value);
-      photoUrls.forEach(url => fd.append('photo_urls', url));
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 30_000);
 
-      const res = await fetch('/api/submissions', { method: 'POST', body: fd });
+      let res: Response;
+      try {
+        res = await fetch('/api/submissions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            honeypot: honeypotRef.current?.value ?? '',
+            photo_urls: photoUrls,
+            ...form,
+          }),
+          signal: controller.signal,
+        });
+      } finally {
+        clearTimeout(timer);
+      }
+
       const body = await res.json();
       if (!res.ok) {
         setSubmitError(body.error ?? `Submission failed (${res.status}). Please try again.`);
         return;
       }
       setSubmitted(true);
-    } catch {
-      setSubmitError('Network error — please check your connection and try again.');
+    } catch (err: unknown) {
+      const isAbort = err instanceof Error && err.name === 'AbortError';
+      setSubmitError(isAbort
+        ? 'Request timed out — please check your connection and try again.'
+        : 'Network error — please check your connection and try again.');
     } finally {
       setLoading(false);
       setUploadStep('idle');
