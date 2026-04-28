@@ -24,7 +24,7 @@ export default async function HomePage() {
       {/* ── Hero ─────────────────────────────────────────────── */}
       <section className="relative min-h-[52svh] flex flex-col justify-end overflow-hidden">
         <img
-          src="https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=1920&q=80"
+          src="https://images.unsplash.com/photo-YPfnvLc3bbQ?auto=format&fit=crop&w=1920&q=80"
           alt=""
           aria-hidden="true"
           fetchPriority="high"
