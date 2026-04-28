@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Separator } from '@/components/ui/separator';
 import PhotoUpload from './photo-upload';
 import { useToast } from '@/components/ui/use-toast';
+import { supabase } from '@/lib/supabase';
 
 interface Props {
   open: boolean;
@@ -32,21 +33,37 @@ export default function AdminAddListing({ open, onOpenChange, onAdded }: Props) 
   async function handleSave() {
     if (photos.length === 0) { toast({ title: 'Photo required', variant: 'destructive' }); return; }
     setLoading(true);
-    const fd = new FormData();
-    Object.entries(form).forEach(([k, v]) => fd.append(k, v));
-    photos.forEach(p => fd.append('photos', p));
-    const res = await fetch('/api/admin/listings', { method: 'POST', body: fd });
-    if (res.ok) {
-      const data = await res.json();
-      toast({ title: 'Listing added and live' });
-      onAdded({ ...form, id: data.id, source: 'admin', status: 'live', photo_urls: [], created_at: new Date().toISOString() } as unknown as Submission);
-      onOpenChange(false);
-      setPhotos([]);
-      setForm({ year: '', make: '', model: '', color: '', vehicle_type: '', mileage: '', monthly_payment: '', payments_left: '', lender: '', balance: '', down_payment: '' });
-    } else {
-      toast({ title: 'Error saving listing', variant: 'destructive' });
+    try {
+      const photoUrls: string[] = [];
+      for (const file of photos) {
+        const ext = file.name.split('.').pop()?.toLowerCase() ?? 'jpg';
+        const filename = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+        const { error } = await supabase.storage
+          .from('vehicle-photos')
+          .upload(filename, file, { contentType: file.type || 'image/jpeg' });
+        if (error) { toast({ title: `Photo upload failed: ${error.message}`, variant: 'destructive' }); return; }
+        const { data: urlData } = supabase.storage.from('vehicle-photos').getPublicUrl(filename);
+        photoUrls.push(urlData.publicUrl);
+      }
+      const res = await fetch('/api/admin/listings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...form, photo_urls: photoUrls }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        toast({ title: 'Listing added and live' });
+        onAdded({ ...form, id: data.id, source: 'admin', status: 'live', photo_urls: photoUrls, created_at: new Date().toISOString() } as unknown as Submission);
+        onOpenChange(false);
+        setPhotos([]);
+        setForm({ year: '', make: '', model: '', color: '', vehicle_type: '', mileage: '', monthly_payment: '', payments_left: '', lender: '', balance: '', down_payment: '' });
+      } else {
+        const body = await res.json();
+        toast({ title: body.error ?? 'Error saving listing', variant: 'destructive' });
+      }
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }
 
   return (

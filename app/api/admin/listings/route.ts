@@ -9,36 +9,26 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  const formData = await req.formData();
-  const photos = formData.getAll('photos') as File[];
-  if (photos.length === 0) {
+  const body = await req.json();
+  const photoUrls: string[] = Array.isArray(body.photo_urls) ? body.photo_urls : [];
+  if (photoUrls.length === 0) {
     return NextResponse.json({ error: 'At least one photo is required' }, { status: 400 });
-  }
-  const db = supabaseAdmin();
-  const photoUrls: string[] = [];
-  for (const photo of photos) {
-    const ext = photo.name.split('.').pop();
-    const filename = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-    const buf = await photo.arrayBuffer();
-    await db.storage.from('vehicle-photos').upload(filename, buf, { contentType: photo.type });
-    const { data } = db.storage.from('vehicle-photos').getPublicUrl(filename);
-    photoUrls.push(data.publicUrl);
   }
   const payload = {
     source: 'admin', status: 'live',
-    year: Number(formData.get('year')), make: formData.get('make') as string,
-    model: formData.get('model') as string, color: formData.get('color') as string,
-    vehicle_type: formData.get('vehicle_type') as string,
-    mileage: formData.get('mileage') ? Number(formData.get('mileage')) : null,
-    monthly_payment: Number(formData.get('monthly_payment')),
-    payments_left: Number(formData.get('payments_left')),
-    lender: formData.get('lender') as string,
-    balance: formData.get('balance') ? Number(formData.get('balance')) : null,
-    down_payment: formData.get('down_payment') ? Number(formData.get('down_payment')) : null,
+    year: Number(body.year), make: body.make as string,
+    model: body.model as string, color: body.color as string,
+    vehicle_type: body.vehicle_type as string,
+    mileage: body.mileage ? Number(body.mileage) : null,
+    monthly_payment: Number(body.monthly_payment),
+    payments_left: Number(body.payments_left),
+    lender: body.lender as string,
+    balance: body.balance ? Number(body.balance) : null,
+    down_payment: body.down_payment ? Number(body.down_payment) : null,
     comfort_level: 'maybe',
     photo_urls: photoUrls,
   };
-  const { data, error } = await db.from('submissions').insert(payload).select('id').single();
+  const { data, error } = await supabaseAdmin().from('submissions').insert(payload).select('id').single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ id: data.id }, { status: 201 });
 }
