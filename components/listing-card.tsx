@@ -57,13 +57,27 @@ export default function ListingCard({ listing }: { listing: PublicListing }) {
               </div>
             </div>
 
-            {/* Monthly payment — hero stat */}
-            <div className="flex items-baseline gap-1">
-              <span className="text-3xl font-black text-primary tracking-tight">
-                {formatCurrency(listing.monthly_payment)}
-              </span>
-              <span className="text-xs text-muted-foreground">/mo</span>
-            </div>
+            {/* Down payment — hero stat */}
+            {listing.down_payment != null ? (
+              <div>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-3xl font-black text-primary tracking-tight">
+                    {formatCurrency(listing.down_payment)}
+                  </span>
+                  <span className="text-xs text-muted-foreground">down</span>
+                </div>
+                <div className="text-xs text-muted-foreground mt-0.5">
+                  then {formatCurrency(listing.monthly_payment)}/mo
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-baseline gap-1">
+                <span className="text-3xl font-black text-primary tracking-tight">
+                  {formatCurrency(listing.monthly_payment)}
+                </span>
+                <span className="text-xs text-muted-foreground">/mo</span>
+              </div>
+            )}
 
             {/* Details grid */}
             <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-sm pt-1 border-t border-border">

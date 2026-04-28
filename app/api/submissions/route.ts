@@ -29,6 +29,7 @@ export async function POST(req: NextRequest) {
     payments_left: Number(body.payments_left),
     lender: body.lender as string,
     balance: body.balance ? Number(body.balance) : null,
+    down_payment: body.down_payment ? Number(body.down_payment) : null,
     comfort_level: 'maybe',
     seller_reason: body.seller_reason as string,
     photo_urls: photoUrls,

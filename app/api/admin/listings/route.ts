@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
     payments_left: Number(formData.get('payments_left')),
     lender: formData.get('lender') as string,
     balance: formData.get('balance') ? Number(formData.get('balance')) : null,
-    comfort_level: formData.get('comfort_level') as string,
+    down_payment: formData.get('down_payment') ? Number(formData.get('down_payment')) : null,
     photo_urls: photoUrls,
   };
   const { data, error } = await db.from('submissions').insert(payload).select('id').single();

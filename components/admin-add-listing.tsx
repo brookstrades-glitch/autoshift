@@ -22,7 +22,7 @@ export default function AdminAddListing({ open, onOpenChange, onAdded }: Props) 
   const { toast } = useToast();
   const [form, setForm] = useState({
     year: '', make: '', model: '', color: '', vehicle_type: '',
-    mileage: '', monthly_payment: '', payments_left: '', lender: '', balance: '',
+    mileage: '', monthly_payment: '', payments_left: '', lender: '', balance: '', down_payment: '',
   });
 
   function update(field: string, value: string) {
@@ -42,7 +42,7 @@ export default function AdminAddListing({ open, onOpenChange, onAdded }: Props) 
       onAdded({ ...form, id: data.id, source: 'admin', status: 'live', photo_urls: [], created_at: new Date().toISOString() } as unknown as Submission);
       onOpenChange(false);
       setPhotos([]);
-      setForm({ year: '', make: '', model: '', color: '', vehicle_type: '', mileage: '', monthly_payment: '', payments_left: '', lender: '', balance: '' });
+      setForm({ year: '', make: '', model: '', color: '', vehicle_type: '', mileage: '', monthly_payment: '', payments_left: '', lender: '', balance: '', down_payment: '' });
     } else {
       toast({ title: 'Error saving listing', variant: 'destructive' });
     }
@@ -85,6 +85,7 @@ export default function AdminAddListing({ open, onOpenChange, onAdded }: Props) 
             </div>
             <div><Label>Lender</Label><Input value={form.lender} onChange={e => update('lender', e.target.value)} /></div>
             <div><Label>Balance</Label><Input type="number" value={form.balance} onChange={e => update('balance', e.target.value)} /></div>
+            <div><Label>Down Payment ($)</Label><Input type="number" value={form.down_payment} onChange={e => update('down_payment', e.target.value)} placeholder="optional" /></div>
           </div>
           <Separator />
           <div><Label>Photos (min 1)</Label><PhotoUpload photos={photos} onPhotosChange={setPhotos} /></div>

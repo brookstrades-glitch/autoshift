@@ -35,7 +35,7 @@ export default function SellerForm() {
     first_name: '', last_name: '', phone: '', email: '',
     year: '', make: '', model: '', color: '', vehicle_type: '',
     mileage: '', monthly_payment: '', payments_left: '', lender: '', balance: '',
-    seller_reason: '',
+    down_payment: '', seller_reason: '',
   });
 
   function update(field: string, value: string) {
@@ -332,6 +332,16 @@ export default function SellerForm() {
             onChange={e => update('balance', e.target.value)}
             inputMode="numeric"
             placeholder="18,000"
+          />
+        </div>
+        <div>
+          <Label htmlFor="down_payment">Down Payment ($) <span className="text-muted-foreground font-normal">(optional)</span></Label>
+          <Input
+            id="down_payment"
+            value={form.down_payment}
+            onChange={e => update('down_payment', e.target.value)}
+            inputMode="numeric"
+            placeholder="1,500"
           />
         </div>
       </div>

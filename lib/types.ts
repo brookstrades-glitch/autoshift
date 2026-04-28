@@ -21,6 +21,7 @@ export interface Submission {
   payments_left: number;
   lender: string;
   balance?: number;
+  down_payment?: number;
   comfort_level: ComfortLevel;
   seller_reason?: string;
   status: SubmissionStatus;
@@ -41,7 +42,7 @@ export interface PublicListing {
   payments_left: number;
   lender: string;
   balance?: number;
-  comfort_level: ComfortLevel;
+  down_payment?: number;
   status: 'live' | 'sold';
   photo_urls: string[];
 }
