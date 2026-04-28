@@ -22,6 +22,8 @@ export default function AdminTable({ listings, onUpdate }: Props) {
   const [tab, setTab] = useState<string>('all');
   const [detail, setDetail] = useState<Submission | null>(null);
   const [notes, setNotes] = useState('');
+  const [editingDownPayment, setEditingDownPayment] = useState<string | null>(null);
+  const [downPaymentDraft, setDownPaymentDraft] = useState('');
   const { toast } = useToast();
 
   const filtered = tab === 'all' ? listings : listings.filter(l => l.status === tab);
@@ -36,6 +38,19 @@ export default function AdminTable({ listings, onUpdate }: Props) {
       onUpdate(id, { status: status as Submission['status'] });
       toast({ title: 'Updated', description: `Listing marked ${status}` });
     }
+  }
+
+  async function saveDownPayment(id: string) {
+    const value = downPaymentDraft.replace(/[^0-9.]/g, '');
+    const parsed = value ? Number(value) : null;
+    await fetch('/api/admin/listings', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, down_payment: parsed }),
+    });
+    onUpdate(id, { down_payment: parsed ?? undefined });
+    setEditingDownPayment(null);
+    toast({ title: parsed ? `Down payment set to ${formatCurrency(parsed)}` : 'Down payment cleared' });
   }
 
   async function saveNotes(id: string) {
@@ -133,6 +148,7 @@ export default function AdminTable({ listings, onUpdate }: Props) {
             <TableRow>
               <TableHead>Vehicle</TableHead>
               <TableHead>Seller</TableHead>
+              <TableHead>Down</TableHead>
               <TableHead>Payment</TableHead>
               <TableHead>Left</TableHead>
               <TableHead>Lender</TableHead>
@@ -143,7 +159,7 @@ export default function AdminTable({ listings, onUpdate }: Props) {
           <TableBody>
             {filtered.length === 0 && (
               <TableRow>
-                <TableCell colSpan={6} className="text-center text-muted-foreground py-12">No listings</TableCell>
+                <TableCell colSpan={8} className="text-center text-muted-foreground py-12">No listings</TableCell>
               </TableRow>
             )}
             {filtered.map(l => (
@@ -156,6 +172,28 @@ export default function AdminTable({ listings, onUpdate }: Props) {
                   {l.source === 'seller'
                     ? <><div className="whitespace-nowrap">{l.first_name} {l.last_name}</div><div className="text-muted-foreground">{l.phone}</div></>
                     : '—'}
+                </TableCell>
+                <TableCell>
+                  {editingDownPayment === l.id ? (
+                    <input
+                      autoFocus
+                      type="text"
+                      inputMode="numeric"
+                      value={downPaymentDraft}
+                      onChange={e => setDownPaymentDraft(e.target.value)}
+                      onBlur={() => saveDownPayment(l.id)}
+                      onKeyDown={e => { if (e.key === 'Enter') saveDownPayment(l.id); if (e.key === 'Escape') setEditingDownPayment(null); }}
+                      className="w-24 rounded border border-border bg-background px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+                    />
+                  ) : (
+                    <button
+                      onClick={() => { setEditingDownPayment(l.id); setDownPaymentDraft(l.down_payment ? String(l.down_payment) : ''); }}
+                      className="whitespace-nowrap text-sm hover:text-primary transition-colors"
+                      title="Click to edit"
+                    >
+                      {l.down_payment != null ? formatCurrency(l.down_payment) : <span className="text-muted-foreground/50">—</span>}
+                    </button>
+                  )}
                 </TableCell>
                 <TableCell className="whitespace-nowrap">{formatCurrency(l.monthly_payment)}/mo</TableCell>
                 <TableCell>{l.payments_left}</TableCell>
