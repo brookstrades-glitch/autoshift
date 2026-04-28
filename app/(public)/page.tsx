@@ -9,7 +9,7 @@ export const revalidate = 60;
 async function getListings(): Promise<PublicListing[]> {
   const { data } = await supabase
     .from('submissions')
-    .select('id,created_at,year,make,model,color,vehicle_type,mileage,monthly_payment,payments_left,lender,balance,comfort_level,status,photo_urls')
+    .select('id,created_at,year,make,model,color,vehicle_type,mileage,monthly_payment,payments_left,lender,balance,down_payment,status,photo_urls')
     .in('status', ['live', 'sold'])
     .order('created_at', { ascending: false });
   return (data ?? []) as PublicListing[];
