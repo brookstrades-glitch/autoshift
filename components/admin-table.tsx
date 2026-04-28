@@ -11,7 +11,7 @@ import { Label } from '@/components/ui/label';
 import { formatCurrency } from '@/lib/utils';
 import { useToast } from '@/components/ui/use-toast';
 
-const STATUS_TABS = ['all', 'pending', 'live', 'sold', 'contacted', 'archived', 'rejected'] as const;
+const STATUS_TABS = ['live', 'pending', 'sold', 'contacted', 'archived', 'rejected', 'all'] as const;
 
 interface Props {
   listings: Submission[];
@@ -19,7 +19,7 @@ interface Props {
 }
 
 export default function AdminTable({ listings, onUpdate }: Props) {
-  const [tab, setTab] = useState<string>('all');
+  const [tab, setTab] = useState<string>('live');
   const [detail, setDetail] = useState<Submission | null>(null);
   const [notes, setNotes] = useState('');
   const [editingDownPayment, setEditingDownPayment] = useState<string | null>(null);
