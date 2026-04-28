@@ -334,8 +334,13 @@ export default function SellerForm() {
             placeholder="18,000"
           />
         </div>
+      </div>
+
+      {/* ── Down Payment ── */}
+      <div className={section}>
+        <h2 className={heading}>Down Payment</h2>
         <div>
-          <Label htmlFor="down_payment">Down Payment ($) <span className="text-muted-foreground font-normal">(optional)</span></Label>
+          <Label htmlFor="down_payment">Amount you're asking ($) <span className="text-muted-foreground font-normal">(optional)</span></Label>
           <Input
             id="down_payment"
             value={form.down_payment}
