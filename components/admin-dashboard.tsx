@@ -10,9 +10,35 @@ import AdminAddListing from './admin-add-listing';
 import { Button } from '@/components/ui/button';
 import { formatCurrency } from '@/lib/utils';
 import { useToast } from '@/components/ui/use-toast';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { X } from 'lucide-react';
+
+function PhotoViewer({ listing, onClose }: { listing: Submission; onClose: () => void }) {
+  return (
+    <Dialog open onOpenChange={v => !v && onClose()}>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>{listing.year} {listing.make} {listing.model} — Photos</DialogTitle>
+        </DialogHeader>
+        {listing.photo_urls.length === 0 ? (
+          <p className="text-muted-foreground text-sm">No photos uploaded.</p>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-[60vh] overflow-y-auto">
+            {listing.photo_urls.map((url, i) => (
+              <a key={i} href={url} target="_blank" rel="noreferrer">
+                <img src={url} alt="" className="w-full aspect-square object-cover rounded-md hover:opacity-80 transition-opacity" />
+              </a>
+            ))}
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
 
 function PendingTray({ listings, onUpdate }: { listings: Submission[]; onUpdate: (id: string, updates: Partial<Submission>) => void }) {
   const { toast } = useToast();
+  const [viewing, setViewing] = useState<Submission | null>(null);
   const pending = listings.filter(l => l.status === 'pending');
   if (pending.length === 0) return null;
 
@@ -29,25 +55,44 @@ function PendingTray({ listings, onUpdate }: { listings: Submission[]; onUpdate:
   }
 
   return (
-    <div className="mb-6 rounded-xl border border-amber-500/30 bg-amber-500/5 p-4">
-      <p className="text-xs font-semibold uppercase tracking-widest text-amber-400 mb-3">
-        Needs Review — {pending.length} pending
-      </p>
-      <div className="space-y-2">
-        {pending.map(l => (
-          <div key={l.id} className="flex items-center justify-between gap-4 rounded-lg border border-border bg-card px-4 py-3">
-            <div className="min-w-0">
-              <p className="font-semibold text-sm truncate">{l.year} {l.make} {l.model}</p>
-              <p className="text-xs text-muted-foreground">{l.first_name} {l.last_name} · {formatCurrency(l.monthly_payment)}/mo</p>
+    <>
+      <div className="mb-6 rounded-xl border border-amber-500/30 bg-amber-500/5 p-4">
+        <p className="text-xs font-semibold uppercase tracking-widest text-amber-400 mb-3">
+          Needs Review — {pending.length} pending
+        </p>
+        <div className="space-y-2">
+          {pending.map(l => (
+            <div key={l.id} className="flex items-center gap-3 rounded-lg border border-border bg-card px-3 py-3">
+              {l.photo_urls[0] ? (
+                <button onClick={() => setViewing(l)} className="shrink-0">
+                  <img
+                    src={l.photo_urls[0]}
+                    alt=""
+                    className="h-14 w-14 rounded-md object-cover hover:opacity-80 transition-opacity"
+                  />
+                </button>
+              ) : (
+                <div className="h-14 w-14 shrink-0 rounded-md bg-muted flex items-center justify-center text-[10px] text-muted-foreground">No photo</div>
+              )}
+              <div className="min-w-0 flex-1">
+                <p className="font-semibold text-sm truncate">{l.year} {l.make} {l.model}</p>
+                <p className="text-xs text-muted-foreground">{l.first_name} {l.last_name} · {formatCurrency(l.monthly_payment)}/mo</p>
+                {l.photo_urls.length > 1 && (
+                  <button onClick={() => setViewing(l)} className="text-[11px] text-primary hover:underline mt-0.5">
+                    View all {l.photo_urls.length} photos
+                  </button>
+                )}
+              </div>
+              <div className="flex gap-2 shrink-0">
+                <Button size="sm" onClick={() => act(l.id, 'live')}>Approve</Button>
+                <Button size="sm" variant="destructive" onClick={() => act(l.id, 'rejected')}>Reject</Button>
+              </div>
             </div>
-            <div className="flex gap-2 shrink-0">
-              <Button size="sm" onClick={() => act(l.id, 'live')}>Approve</Button>
-              <Button size="sm" variant="destructive" onClick={() => act(l.id, 'rejected')}>Reject</Button>
-            </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
-    </div>
+      {viewing && <PhotoViewer listing={viewing} onClose={() => setViewing(null)} />}
+    </>
   );
 }
 
