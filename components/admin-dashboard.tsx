@@ -8,6 +8,48 @@ import AdminTable from './admin-table';
 import AdminInquiries from './admin-inquiries';
 import AdminAddListing from './admin-add-listing';
 import { Button } from '@/components/ui/button';
+import { formatCurrency } from '@/lib/utils';
+import { useToast } from '@/components/ui/use-toast';
+
+function PendingTray({ listings, onUpdate }: { listings: Submission[]; onUpdate: (id: string, updates: Partial<Submission>) => void }) {
+  const { toast } = useToast();
+  const pending = listings.filter(l => l.status === 'pending');
+  if (pending.length === 0) return null;
+
+  async function act(id: string, status: 'live' | 'rejected') {
+    const res = await fetch('/api/admin/listings', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, status }),
+    });
+    if (res.ok) {
+      onUpdate(id, { status });
+      toast({ title: status === 'live' ? 'Approved — now live' : 'Rejected' });
+    }
+  }
+
+  return (
+    <div className="mb-6 rounded-xl border border-amber-500/30 bg-amber-500/5 p-4">
+      <p className="text-xs font-semibold uppercase tracking-widest text-amber-400 mb-3">
+        Needs Review — {pending.length} pending
+      </p>
+      <div className="space-y-2">
+        {pending.map(l => (
+          <div key={l.id} className="flex items-center justify-between gap-4 rounded-lg border border-border bg-card px-4 py-3">
+            <div className="min-w-0">
+              <p className="font-semibold text-sm truncate">{l.year} {l.make} {l.model}</p>
+              <p className="text-xs text-muted-foreground">{l.first_name} {l.last_name} · {formatCurrency(l.monthly_payment)}/mo</p>
+            </div>
+            <div className="flex gap-2 shrink-0">
+              <Button size="sm" onClick={() => act(l.id, 'live')}>Approve</Button>
+              <Button size="sm" variant="destructive" onClick={() => act(l.id, 'rejected')}>Reject</Button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 interface Props {
   stats: { pending: number; live: number; sold: number; newInquiries: number };
@@ -57,6 +99,7 @@ export default function AdminDashboard({ stats, listings, inquiries }: Props) {
           </TabsTrigger>
         </TabsList>
         <TabsContent value="listings" className="mt-4">
+          <PendingTray listings={allListings} onUpdate={updateListing} />
           <AdminTable listings={allListings} onUpdate={updateListing} />
         </TabsContent>
         <TabsContent value="inquiries" className="mt-4">
