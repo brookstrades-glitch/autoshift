@@ -1,5 +1,5 @@
 'use client';
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,17 +7,24 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import PhotoUpload from './photo-upload';
+import PhotoUpload, { type UploadStatus } from './photo-upload';
 
 export default function SellerForm() {
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [uploadStep, setUploadStep] = useState<'idle' | 'uploading' | 'saving'>('idle');
-  const [uploadProgress, setUploadProgress] = useState('');
+  const [savingStep, setSavingStep] = useState<'idle' | 'finalizing' | 'saving'>('idle');
   const [submitError, setSubmitError] = useState('');
   const [photoError, setPhotoError] = useState('');
   const [offline, setOffline] = useState(false);
-  const [photos, setPhotos] = useState<File[]>([]);
+  const [disableCleanup, setDisableCleanup] = useState(false);
+
+  // Photo upload state — populated by PhotoUpload via onStatusChange
+  const [uploadStatus, setUploadStatus] = useState<UploadStatus>('idle');
+  const [photoUrls, setPhotoUrls] = useState<string[]>([]);
+  const uploadStatusRef = useRef<UploadStatus>('idle');
+  const photoUrlsRef = useRef<string[]>([]);
+  const waitResolverRef = useRef<(() => void) | null>(null);
+
   const honeypotRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -29,6 +36,18 @@ export default function SellerForm() {
       window.removeEventListener('offline', goOffline);
       window.removeEventListener('online',  goOnline);
     };
+  }, []);
+
+  const handleUploadStatusChange = useCallback((status: UploadStatus, urls: string[]) => {
+    uploadStatusRef.current = status;
+    photoUrlsRef.current = urls;
+    setUploadStatus(status);
+    setPhotoUrls(urls);
+    // Unblock a submit handler waiting for in-flight uploads to settle
+    if (waitResolverRef.current && (status === 'done' || status === 'partial_error')) {
+      waitResolverRef.current();
+      waitResolverRef.current = null;
+    }
   }, []);
 
   const [form, setForm] = useState({
@@ -50,55 +69,42 @@ export default function SellerForm() {
     return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
   }
 
-  async function uploadWithRetry(file: File, filename: string, attempt = 0): Promise<string> {
-    const { error } = await supabase.storage
-      .from('vehicle-photos')
-      .upload(filename, file, { contentType: file.type || 'image/jpeg' });
-
-    if (error) {
-      if (attempt < 2) {
-        await new Promise(r => setTimeout(r, (attempt + 1) * 1000));
-        return uploadWithRetry(file, filename, attempt + 1);
-      }
-      throw new Error(error.message);
-    }
-
-    const { data: urlData } = supabase.storage.from('vehicle-photos').getPublicUrl(filename);
-    return urlData.publicUrl;
-  }
-
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (photos.length === 0) { setPhotoError('At least one photo is required.'); return; }
+    setSubmitError('');
+    setPhotoError('');
+
+    if (uploadStatusRef.current === 'idle') {
+      setPhotoError('At least one photo is required.');
+      return;
+    }
+
     if (!navigator.onLine) {
       setSubmitError('No internet connection. Please check your connection and try again.');
       return;
     }
-    setPhotoError('');
-    setSubmitError('');
+
     setLoading(true);
 
     try {
-      setUploadStep('uploading');
-      const photoUrls: string[] = [];
-
-      for (let i = 0; i < photos.length; i++) {
-        setUploadProgress(`Uploading photo ${i + 1} of ${photos.length}…`);
-        const file = photos[i];
-        const ext = file.name.split('.').pop()?.toLowerCase() ?? 'jpg';
-        const filename = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-
-        try {
-          const url = await uploadWithRetry(file, filename);
-          photoUrls.push(url);
-        } catch (err) {
-          setSubmitError(`Photo ${i + 1} upload failed. Check your connection and try again.`);
-          return;
-        }
+      // If photos are still uploading, wait for them to settle
+      if (uploadStatusRef.current === 'in_progress') {
+        setSavingStep('finalizing');
+        await new Promise<void>(resolve => { waitResolverRef.current = resolve; });
       }
 
-      // Step 2: send form fields + URLs as JSON with a 30-second timeout.
-      setUploadStep('saving');
+      if (uploadStatusRef.current === 'partial_error') {
+        setSubmitError('Some photos failed to upload — use the retry buttons above, then try again.');
+        return;
+      }
+
+      const urls = photoUrlsRef.current;
+      if (urls.length === 0) {
+        setPhotoError('At least one photo is required.');
+        return;
+      }
+
+      setSavingStep('saving');
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), 30_000);
 
@@ -109,7 +115,7 @@ export default function SellerForm() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             honeypot: honeypotRef.current?.value ?? '',
-            photo_urls: photoUrls,
+            photo_urls: urls,
             ...form,
           }),
           signal: controller.signal,
@@ -123,6 +129,8 @@ export default function SellerForm() {
         setSubmitError(body.error ?? `Submission failed (${res.status}). Please try again.`);
         return;
       }
+
+      setDisableCleanup(true);
       setSubmitted(true);
     } catch (err: unknown) {
       const isAbort = err instanceof Error && err.name === 'AbortError';
@@ -131,8 +139,7 @@ export default function SellerForm() {
         : 'Network error — please check your connection and try again.');
     } finally {
       setLoading(false);
-      setUploadStep('idle');
-      setUploadProgress('');
+      setSavingStep('idle');
     }
   }
 
@@ -368,7 +375,11 @@ export default function SellerForm() {
       {/* ── Photos ── */}
       <div className={section}>
         <h2 className={heading} id="section-photos">Photos</h2>
-        <PhotoUpload photos={photos} onPhotosChange={setPhotos} />
+        <PhotoUpload
+          max={8}
+          onStatusChange={handleUploadStatusChange}
+          disableCleanup={disableCleanup}
+        />
         {photoError && (
           <p role="alert" className="text-sm text-destructive mt-1">{photoError}</p>
         )}
@@ -385,8 +396,8 @@ export default function SellerForm() {
       )}
 
       <Button type="submit" disabled={loading} className="w-full" size="lg">
-        {uploadStep === 'uploading' ? (uploadProgress || 'Uploading…') :
-         uploadStep === 'saving'   ? 'Saving…' :
+        {savingStep === 'finalizing' ? 'Finalizing your photos…' :
+         savingStep === 'saving'     ? 'Saving…' :
          'Submit Listing'}
       </Button>
     </form>

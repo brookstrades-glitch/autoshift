@@ -232,6 +232,7 @@ export default function AdminTable({ listings, onUpdate }: Props) {
                 {detail.phone && <><span className="text-muted-foreground">Phone</span><span>{detail.phone}</span></>}
                 {detail.email && <><span className="text-muted-foreground">Email</span><span>{detail.email}</span></>}
                 <span className="text-muted-foreground">Lender</span><span>{detail.lender}</span>
+                {detail.down_payment != null && <><span className="text-muted-foreground">Down requested</span><span className="font-medium">{formatCurrency(detail.down_payment)}</span></>}
                 {detail.balance && <><span className="text-muted-foreground">Balance</span><span>{formatCurrency(detail.balance)}</span></>}
                 {detail.mileage && <><span className="text-muted-foreground">Mileage</span><span>{detail.mileage.toLocaleString()} mi</span></>}
                 {detail.seller_reason && <><span className="text-muted-foreground">Reason</span><span>{detail.seller_reason}</span></>}

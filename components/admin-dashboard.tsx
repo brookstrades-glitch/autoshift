@@ -76,7 +76,10 @@ function PendingTray({ listings, onUpdate }: { listings: Submission[]; onUpdate:
               )}
               <div className="min-w-0 flex-1">
                 <p className="font-semibold text-sm truncate">{l.year} {l.make} {l.model}</p>
-                <p className="text-xs text-muted-foreground">{l.first_name} {l.last_name} · {formatCurrency(l.monthly_payment)}/mo</p>
+                <p className="text-xs text-muted-foreground">
+                  {l.first_name} {l.last_name} · {formatCurrency(l.monthly_payment)}/mo
+                  {l.down_payment != null && <span className="ml-1 text-amber-300 font-medium">· {formatCurrency(l.down_payment)} down requested</span>}
+                </p>
                 {l.photo_urls.length > 1 && (
                   <button onClick={() => setViewing(l)} className="text-[11px] text-primary hover:underline mt-0.5">
                     View all {l.photo_urls.length} photos

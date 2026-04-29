@@ -68,7 +68,7 @@ export default function StatusPage() {
           {results.length === 0 ? (
             <Alert>
               <AlertDescription>
-                No listing found for that contact info. Double-check or reach out to us at +1 (706) 459-9280.
+                No listing found for that contact info. Double-check or reach out to us at +1 (832) 980-7618.
               </AlertDescription>
             </Alert>
           ) : (

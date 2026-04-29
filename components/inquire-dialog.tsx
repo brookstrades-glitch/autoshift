@@ -110,7 +110,7 @@ export default function InquireDialog({ listing, open, onOpenChange }: Props) {
         )}
 
         <DialogFooter className="text-xs text-muted-foreground justify-center pt-2">
-          +1 (706) 459-9280 · twice1021@gmail.com
+          Prefer to reach out directly? Call or text +1 (832) 980-7618
         </DialogFooter>
       </DialogContent>
     </Dialog>

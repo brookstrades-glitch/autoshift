@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { Submission } from '@/lib/types';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -7,9 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
-import PhotoUpload from './photo-upload';
+import PhotoUpload, { type UploadStatus } from './photo-upload';
 import { useToast } from '@/components/ui/use-toast';
-import { supabase } from '@/lib/supabase';
 
 interface Props {
   open: boolean;
@@ -18,7 +17,9 @@ interface Props {
 }
 
 export default function AdminAddListing({ open, onOpenChange, onAdded }: Props) {
-  const [photos, setPhotos] = useState<File[]>([]);
+  const [uploadStatus, setUploadStatus] = useState<UploadStatus>('idle');
+  const [photoUrls, setPhotoUrls] = useState<string[]>([]);
+  const [disableCleanup, setDisableCleanup] = useState(false);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const [form, setForm] = useState({
@@ -26,25 +27,22 @@ export default function AdminAddListing({ open, onOpenChange, onAdded }: Props) 
     mileage: '', monthly_payment: '', payments_left: '', lender: '', balance: '', down_payment: '',
   });
 
+  const handleUploadStatusChange = useCallback((status: UploadStatus, urls: string[]) => {
+    setUploadStatus(status);
+    setPhotoUrls(urls);
+  }, []);
+
   function update(field: string, value: string) {
     setForm(prev => ({ ...prev, [field]: value }));
   }
 
   async function handleSave() {
-    if (photos.length === 0) { toast({ title: 'Photo required', variant: 'destructive' }); return; }
+    if (uploadStatus === 'idle') { toast({ title: 'Photo required', variant: 'destructive' }); return; }
+    if (uploadStatus === 'in_progress') { toast({ title: 'Photos still uploading — please wait', variant: 'destructive' }); return; }
+    if (uploadStatus === 'partial_error') { toast({ title: 'Some photos failed — retry before saving', variant: 'destructive' }); return; }
+    if (photoUrls.length === 0) { toast({ title: 'Photo required', variant: 'destructive' }); return; }
     setLoading(true);
     try {
-      const photoUrls: string[] = [];
-      for (const file of photos) {
-        const ext = file.name.split('.').pop()?.toLowerCase() ?? 'jpg';
-        const filename = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-        const { error } = await supabase.storage
-          .from('vehicle-photos')
-          .upload(filename, file, { contentType: file.type || 'image/jpeg' });
-        if (error) { toast({ title: `Photo upload failed: ${error.message}`, variant: 'destructive' }); return; }
-        const { data: urlData } = supabase.storage.from('vehicle-photos').getPublicUrl(filename);
-        photoUrls.push(urlData.publicUrl);
-      }
       const res = await fetch('/api/admin/listings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -54,8 +52,8 @@ export default function AdminAddListing({ open, onOpenChange, onAdded }: Props) 
         const data = await res.json();
         toast({ title: 'Listing added and live' });
         onAdded({ ...form, id: data.id, source: 'admin', status: 'live', photo_urls: photoUrls, created_at: new Date().toISOString() } as unknown as Submission);
+        setDisableCleanup(true);
         onOpenChange(false);
-        setPhotos([]);
         setForm({ year: '', make: '', model: '', color: '', vehicle_type: '', mileage: '', monthly_payment: '', payments_left: '', lender: '', balance: '', down_payment: '' });
       } else {
         const body = await res.json();
@@ -105,7 +103,7 @@ export default function AdminAddListing({ open, onOpenChange, onAdded }: Props) 
             <div><Label>Down Payment ($)</Label><Input type="number" value={form.down_payment} onChange={e => update('down_payment', e.target.value)} placeholder="optional" /></div>
           </div>
           <Separator />
-          <div><Label>Photos (min 1)</Label><PhotoUpload photos={photos} onPhotosChange={setPhotos} /></div>
+          <div><Label>Photos (min 1)</Label><PhotoUpload onStatusChange={handleUploadStatusChange} disableCleanup={disableCleanup} /></div>
           <Button onClick={handleSave} disabled={loading} className="w-full">{loading ? 'Saving...' : 'Add Listing — Go Live'}</Button>
         </div>
       </DialogContent>

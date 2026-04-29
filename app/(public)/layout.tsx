@@ -11,8 +11,7 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
             <a href="/status" className="hover:underline">Check your listing status</a>
           </div>
           <div className="flex gap-4">
-            <span>+1 (706) 459-9280</span>
-            <span>twice1021@gmail.com</span>
+            <span>+1 (832) 980-7618</span>
           </div>
         </div>
       </footer>
