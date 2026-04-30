@@ -1,8 +1,15 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/lib/supabase';
 import { PublicListing } from '@/lib/types';
 import BrowseFilters from '@/components/browse-filters';
+
+export const metadata: Metadata = {
+  title: 'Car Note Takeovers in Houston, TX',
+  description: 'Browse verified car note takeover deals in Houston. Take over someone\'s car payments — no bank financing required. New listings added regularly.',
+  alternates: { canonical: 'https://autoshifthouston.com' },
+};
 
 export const revalidate = 60;
 

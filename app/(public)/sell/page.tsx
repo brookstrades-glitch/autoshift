@@ -1,4 +1,11 @@
+import type { Metadata } from 'next';
 import SellerForm from '@/components/seller-form';
+
+export const metadata: Metadata = {
+  title: 'List Your Car Note',
+  description: 'List your car note in Houston for free. Connect with verified buyers and get out of your payment — we review every submission and reach out within 48 hours.',
+  alternates: { canonical: 'https://autoshifthouston.com/sell' },
+};
 
 export default function SellPage() {
   return (
