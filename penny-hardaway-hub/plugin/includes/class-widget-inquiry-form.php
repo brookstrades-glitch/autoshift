@@ -35,6 +35,11 @@ class Widget_Inquiry_Form extends Widget_Base {
             'type'    => Controls_Manager::TEXTAREA,
             'default' => 'For media, speaking, community, and business inquiries.',
         ] );
+        $this->add_control( 'pilot_notice', [
+            'label'   => 'Pilot Notice (shown on submit)',
+            'type'    => Controls_Manager::TEXT,
+            'default' => 'Inquiries opening soon. Thank you for your interest.',
+        ] );
         $this->add_control( 'submit_label', [
             'label'   => 'Submit Button Label',
             'type'    => Controls_Manager::TEXT,
@@ -46,6 +51,7 @@ class Widget_Inquiry_Form extends Widget_Base {
 
     protected function render() {
         $s = $this->get_settings_for_display();
+        $pilot_notice = esc_attr( $s['pilot_notice'] ?? 'Inquiries opening soon. Thank you for your interest.' );
         ?>
         <section id="contact" class="ph-section">
             <div class="ph-container ph-contact-inner" style="display:grid;grid-template-columns:1fr 1.6fr;gap:6rem;align-items:start;">
@@ -63,17 +69,16 @@ class Widget_Inquiry_Form extends Widget_Base {
                     <?php endif; ?>
                 </div>
 
-                <form id="ph-inquiry-form" class="ph-form ph-reveal" novalidate>
-                    <?php wp_nonce_field( 'penny_hub_inquiry', 'nonce' ); ?>
+                <form class="ph-form ph-reveal" data-pilot-notice="<?php echo $pilot_notice; ?>" novalidate>
 
                     <div class="ph-form-row-2">
                         <div class="ph-field">
-                            <label for="ph-name">Name <span aria-hidden="true">*</span></label>
-                            <input type="text" id="ph-name" name="name" placeholder="Full Name" required autocomplete="name">
+                            <label for="ph-name">Name</label>
+                            <input type="text" id="ph-name" name="name" placeholder="Full Name" autocomplete="name">
                         </div>
                         <div class="ph-field">
-                            <label for="ph-email">Email <span aria-hidden="true">*</span></label>
-                            <input type="email" id="ph-email" name="email" placeholder="email@example.com" required autocomplete="email">
+                            <label for="ph-email">Email</label>
+                            <input type="email" id="ph-email" name="email" placeholder="email@example.com" autocomplete="email">
                         </div>
                     </div>
 
@@ -95,8 +100,8 @@ class Widget_Inquiry_Form extends Widget_Base {
                     </div>
 
                     <div class="ph-field">
-                        <label for="ph-message">Message <span aria-hidden="true">*</span></label>
-                        <textarea id="ph-message" name="message" placeholder="Tell us more..." required></textarea>
+                        <label for="ph-message">Message</label>
+                        <textarea id="ph-message" name="message" placeholder="Tell us more..."></textarea>
                     </div>
 
                     <div class="ph-form-status" role="alert" aria-live="polite"></div>
@@ -104,6 +109,7 @@ class Widget_Inquiry_Form extends Widget_Base {
                     <button type="submit" class="ph-btn ph-btn-primary ph-magnetic" style="width:100%;justify-content:center;">
                         <?php echo esc_html( $s['submit_label'] ); ?>
                     </button>
+
                 </form>
 
             </div>

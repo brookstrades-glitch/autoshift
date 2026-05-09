@@ -7,22 +7,15 @@
 (function () {
     'use strict';
 
-    // ------------------------------------------------------------------
-    // Guard 1: Don't run inside the Elementor editor — causes conflicts
-    // ------------------------------------------------------------------
+    // Don't run inside the Elementor editor
     if ( document.body.classList.contains('elementor-editor-active') ) return;
 
-    // ------------------------------------------------------------------
-    // Guard 2: If GSAP/Lenis didn't load from CDN, make content visible
-    // immediately so the page never shows a blank/invisible state.
-    // Animations simply won't play — everything else works normally.
-    // ------------------------------------------------------------------
-    const hasGSAP          = typeof gsap        !== 'undefined';
-    const hasScrollTrigger = typeof ScrollTrigger !== 'undefined';
-    const hasLenis         = typeof Lenis        !== 'undefined';
+    // If GSAP didn't load, reveal all content immediately
+    var hasGSAP          = typeof gsap         !== 'undefined';
+    var hasScrollTrigger = typeof ScrollTrigger !== 'undefined';
+    var hasLenis         = typeof Lenis         !== 'undefined';
 
     if ( ! hasGSAP ) {
-        // Reveal all animated elements immediately so content isn't hidden
         document.querySelectorAll(
             '.ph-reveal, .ph-reveal-group > *, .ph-line-reveal span'
         ).forEach( function(el) {
@@ -46,13 +39,11 @@
                 smooth:      true,
                 smoothTouch: false,
             });
-
             if ( hasGSAP ) {
                 lenis.on('scroll', ScrollTrigger.update);
                 gsap.ticker.add(function(t) { lenis.raf(t * 1000); });
                 gsap.ticker.lagSmoothing(0);
             } else {
-                // Drive Lenis with rAF when GSAP isn't available
                 (function tick(t) { lenis.raf(t); requestAnimationFrame(tick); })(0);
             }
         }
@@ -65,7 +56,7 @@
     // ------------------------------------------------------------------
     try {
         var canvas = document.createElement('canvas');
-        canvas.id = 'ph-grain';
+        canvas.id  = 'ph-grain';
         canvas.setAttribute('aria-hidden', 'true');
         document.body.appendChild(canvas);
 
@@ -82,8 +73,7 @@
         function drawGrain() {
             gtick++;
             if ( gtick % 2 ) { requestAnimationFrame(drawGrain); return; }
-            var img = ctx.createImageData(gw, gh);
-            var d   = img.data;
+            var img = ctx.createImageData(gw, gh), d = img.data;
             for ( var i = 0; i < d.length; i += 4 ) {
                 var v = (Math.random() * 255) | 0;
                 d[i] = d[i+1] = d[i+2] = v;
@@ -98,19 +88,19 @@
     }
 
     // ------------------------------------------------------------------
-    // Sticky nav scroll state
+    // Sticky nav
     // ------------------------------------------------------------------
     try {
         var nav = document.getElementById('ph-nav');
         if ( nav ) {
-            var onNavScroll = function(payload) {
+            var onScroll = function(payload) {
                 var s = payload ? payload.scroll : window.scrollY;
                 nav.classList.toggle('scrolled', s > 80);
             };
             if ( lenis ) {
-                lenis.on('scroll', onNavScroll);
+                lenis.on('scroll', onScroll);
             } else {
-                window.addEventListener('scroll', function() { onNavScroll(null); }, { passive: true });
+                window.addEventListener('scroll', function() { onScroll(null); }, { passive: true });
             }
         }
     } catch(e) {
@@ -118,7 +108,7 @@
     }
 
     // ------------------------------------------------------------------
-    // Scroll-triggered reveals (only when GSAP + ScrollTrigger loaded)
+    // Scroll-triggered reveals
     // ------------------------------------------------------------------
     if ( hasGSAP && hasScrollTrigger ) {
         try {
@@ -129,7 +119,6 @@
                       scrollTrigger: { trigger: el, start: 'top 88%', once: true } }
                 );
             });
-
             gsap.utils.toArray('.ph-reveal-group').forEach(function(group) {
                 gsap.fromTo( group.querySelectorAll(':scope > *'),
                     { opacity: 0, y: 20 },
@@ -137,7 +126,6 @@
                       scrollTrigger: { trigger: group, start: 'top 86%', once: true } }
                 );
             });
-
             gsap.utils.toArray('.ph-line-reveal span').forEach(function(span) {
                 gsap.fromTo( span,
                     { y: '105%' },
@@ -146,7 +134,6 @@
                 );
             });
         } catch(e) {
-            // If reveal setup fails, show all content immediately
             console.warn('[PH Hub] Reveals failed, showing content:', e);
             document.querySelectorAll('.ph-reveal, .ph-reveal-group > *, .ph-line-reveal span')
                 .forEach(function(el) { el.style.opacity = '1'; el.style.transform = 'none'; });
@@ -154,17 +141,16 @@
     }
 
     // ------------------------------------------------------------------
-    // Parallax images
+    // Parallax
     // ------------------------------------------------------------------
     if ( hasGSAP && hasScrollTrigger ) {
         try {
             gsap.utils.toArray('.ph-parallax-img').forEach(function(img) {
-                gsap.to( img, {
-                    yPercent: -12, ease: 'none',
+                gsap.to( img, { yPercent: -12, ease: 'none',
                     scrollTrigger: {
                         trigger: img.closest('.ph-parallax-wrap') || img,
                         start: 'top bottom', end: 'bottom top', scrub: true,
-                    },
+                    }
                 });
             });
         } catch(e) {
@@ -173,7 +159,7 @@
     }
 
     // ------------------------------------------------------------------
-    // Magnetic buttons (degrades gracefully — just no magnetic pull)
+    // Magnetic buttons
     // ------------------------------------------------------------------
     if ( hasGSAP ) {
         try {
@@ -229,7 +215,6 @@
                 document.body.style.overflow = '';
                 if ( lenis ) lenis.start();
             }
-
             if ( closeBtn ) closeBtn.addEventListener('click', closeModal);
             modal.addEventListener('click', function(e) { if ( e.target === modal ) closeModal(); });
             document.addEventListener('keydown', function(e) {
@@ -241,43 +226,23 @@
     }
 
     // ------------------------------------------------------------------
-    // Inquiry form — AJAX submit
+    // Pilot form — no submission, show notice on click
     // ------------------------------------------------------------------
     try {
-        var form = document.getElementById('ph-inquiry-form');
-        if ( form && typeof pennyHub !== 'undefined' ) {
+        document.querySelectorAll('.ph-form[data-pilot-notice]').forEach(function(form) {
             var statusEl  = form.querySelector('.ph-form-status');
             var submitBtn = form.querySelector('[type="submit"]');
-            var origLabel = submitBtn ? submitBtn.textContent : 'Submit Inquiry';
+            var notice    = form.dataset.pilotNotice;
 
             form.addEventListener('submit', function(e) {
                 e.preventDefault();
-                if ( submitBtn ) { submitBtn.disabled = true; submitBtn.textContent = 'Sending...'; }
-
-                var data = new FormData(form);
-                data.set('action', 'penny_hub_inquiry');
-                data.set('nonce',  pennyHub.nonce);
-
-                fetch(pennyHub.ajaxUrl, { method: 'POST', body: data })
-                    .then(function(r) { return r.json(); })
-                    .then(function(json) {
-                        if ( statusEl ) {
-                            statusEl.className   = 'ph-form-status ' + (json.success ? 'success' : 'error');
-                            statusEl.textContent = json.data.message;
-                        }
-                        if ( json.success ) form.reset();
-                    })
-                    .catch(function() {
-                        if ( statusEl ) {
-                            statusEl.className   = 'ph-form-status error';
-                            statusEl.textContent = 'Connection error. Please email us directly or try again.';
-                        }
-                    })
-                    .finally(function() {
-                        if ( submitBtn ) { submitBtn.disabled = false; submitBtn.textContent = origLabel; }
-                    });
+                if ( statusEl ) {
+                    statusEl.className   = 'ph-form-status success';
+                    statusEl.textContent = notice;
+                }
+                if ( submitBtn ) submitBtn.disabled = true;
             });
-        }
+        });
     } catch(e) {
         console.warn('[PH Hub] Form init failed:', e);
     }
