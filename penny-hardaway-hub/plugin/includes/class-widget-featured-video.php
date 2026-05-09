@@ -43,20 +43,23 @@ class Widget_Featured_Video extends Widget_Base {
             'label'       => 'YouTube Video ID',
             'type'        => Controls_Manager::TEXT,
             'placeholder' => 'dQw4w9WgXcQ',
-            'description' => 'The ID after ?v= in the YouTube URL',
+            // sanitize_text_field preserves case — YouTube IDs are case-sensitive
+            'description' => 'The ID after ?v= in the YouTube URL. Case-sensitive.',
         ] );
 
         $this->end_controls_section();
     }
 
     protected function render() {
-        $s         = $this->get_settings_for_display();
-        $thumb_url = $s['thumbnail']['url'] ?? '';
-        $yt_id     = sanitize_key( $s['youtube_id'] ?? '' );
+        $s = $this->get_settings_for_display();
 
-        // Fall back to YouTube-generated maxres thumbnail
+        $thumb_url = $s['thumbnail']['url'] ?? '';
+
+        // sanitize_text_field (not sanitize_key) — preserves original case
+        $yt_id = sanitize_text_field( $s['youtube_id'] ?? '' );
+
         if ( ! $thumb_url && $yt_id ) {
-            $thumb_url = 'https://img.youtube.com/vi/' . $yt_id . '/maxresdefault.jpg';
+            $thumb_url = 'https://img.youtube.com/vi/' . esc_attr( $yt_id ) . '/maxresdefault.jpg';
         }
         ?>
         <section id="featured-media" class="ph-section">
@@ -96,7 +99,6 @@ class Widget_Featured_Video extends Widget_Base {
             </div>
         </section>
 
-        <!-- Global video modal — rendered once, reused by all video triggers -->
         <div id="ph-video-modal" class="ph-modal" role="dialog" aria-modal="true" aria-label="Video player">
             <div class="ph-modal__inner">
                 <button id="ph-modal-close" class="ph-modal__close">&#x2715;&nbsp; Close</button>
