@@ -1,0 +1,277 @@
+/* ===========================================
+   PENNY HARDAWAY BRAND HUB — Animations
+   =========================================== */
+
+/* ---- Film Grain ---- */
+#ph-grain {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+    z-index: 9999;
+    opacity: 0.028;
+    mix-blend-mode: overlay;
+}
+
+/* ---- Fade-up Reveal ---- */
+.ph-reveal {
+    opacity: 0;
+    transform: translateY(28px);
+    will-change: opacity, transform;
+}
+
+/* ---- Stagger group ---- */
+.ph-reveal-group > * {
+    opacity: 0;
+    transform: translateY(20px);
+    will-change: opacity, transform;
+}
+
+/* ---- Text line wipe ---- */
+.ph-line-reveal {
+    overflow: hidden;
+    display: block;
+}
+.ph-line-reveal span {
+    display: block;
+    transform: translateY(105%);
+    will-change: transform;
+}
+
+/* ---- Hero Section ---- */
+.ph-hero {
+    position: relative;
+    width: 100%;
+    height: 100vh;
+    min-height: 600px;
+    overflow: hidden;
+    display: flex;
+    align-items: flex-end;
+    justify-content: flex-start;
+}
+
+.ph-hero__video-wrap {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+}
+.ph-hero__video-wrap video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center top;
+}
+
+.ph-hero__fallback {
+    display: none;
+    position: absolute;
+    inset: 0;
+    background-size: cover;
+    background-position: center;
+}
+
+.ph-hero__overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    background: linear-gradient(
+        to top,
+        rgba(10, 10, 10, 0.93) 0%,
+        rgba(10, 10, 10, 0.42) 52%,
+        rgba(10, 10, 10, 0.12) 100%
+    );
+}
+
+.ph-hero__content {
+    position: relative;
+    z-index: 2;
+    padding: 0 5vw var(--ph-space-lg);
+    max-width: 900px;
+}
+
+.ph-hero__label {
+    display: block;
+    font-size: 0.72rem;
+    letter-spacing: 0.35em;
+    text-transform: uppercase;
+    color: var(--ph-gold);
+    font-family: var(--ph-font-body);
+    font-weight: 500;
+    margin-bottom: 1.2rem;
+}
+
+.ph-hero__headline {
+    font-family: var(--ph-font-display);
+    font-size: clamp(3.5rem, 9vw, 8.5rem);
+    font-weight: 300;
+    line-height: 0.95;
+    letter-spacing: -0.02em;
+    color: var(--ph-cream);
+    margin: 0 0 1.2rem;
+}
+
+.ph-hero__sub {
+    font-family: var(--ph-font-body);
+    font-size: clamp(0.82rem, 1.4vw, 0.95rem);
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    color: rgba(240, 234, 214, 0.55);
+    margin: 0 0 2.5rem;
+}
+
+.ph-hero__scroll {
+    position: absolute;
+    bottom: 2.5rem;
+    right: 5vw;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+}
+.ph-hero__scroll span {
+    font-size: 0.62rem;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: rgba(240, 234, 214, 0.38);
+    writing-mode: vertical-rl;
+}
+.ph-hero__scroll-line {
+    width: 1px;
+    height: 52px;
+    background: linear-gradient(to bottom, var(--ph-gold), transparent);
+    animation: ph-scroll-line 2s ease-in-out infinite;
+}
+@keyframes ph-scroll-line {
+    0%    { transform: scaleY(0);  transform-origin: top;    }
+    48%   { transform: scaleY(1);  transform-origin: top;    }
+    50%   { transform: scaleY(1);  transform-origin: bottom; }
+    100%  { transform: scaleY(0);  transform-origin: bottom; }
+}
+
+/* ---- Featured Video Thumbnail ---- */
+.ph-video-thumb {
+    position: relative;
+    cursor: pointer;
+    overflow: hidden;
+    aspect-ratio: 16 / 9;
+    background: var(--ph-charcoal);
+}
+.ph-video-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.8s var(--ph-ease), filter 0.4s ease;
+    display: block;
+}
+.ph-video-thumb:hover img {
+    transform: scale(1.03);
+    filter: brightness(0.72);
+}
+
+.ph-play-btn {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+}
+.ph-play-btn__circle {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    border: 1px solid rgba(240, 234, 214, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(10, 10, 10, 0.38);
+    backdrop-filter: blur(4px);
+    transition: border-color 0.3s ease, background 0.3s ease, transform 0.35s var(--ph-ease);
+}
+.ph-video-thumb:hover .ph-play-btn__circle {
+    border-color: var(--ph-gold);
+    background: rgba(184, 154, 90, 0.18);
+    transform: scale(1.1);
+}
+.ph-play-btn__icon {
+    width: 0;
+    height: 0;
+    border-style: solid;
+    border-width: 9px 0 9px 16px;
+    border-color: transparent transparent transparent var(--ph-cream);
+    margin-left: 4px;
+}
+
+/* ---- Video Modal ---- */
+.ph-modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    background: rgba(10, 10, 10, 0.95);
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+.ph-modal.is-open {
+    display: flex;
+    animation: ph-modal-in 0.35s var(--ph-ease) forwards;
+}
+@keyframes ph-modal-in {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+.ph-modal__inner {
+    width: 100%;
+    max-width: 1000px;
+    position: relative;
+}
+
+.ph-modal__close {
+    position: absolute;
+    top: -2.75rem;
+    right: 0;
+    background: none;
+    border: none;
+    color: rgba(240, 234, 214, 0.55);
+    cursor: pointer;
+    font-family: var(--ph-font-body);
+    font-size: 0.72rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    transition: color 0.3s;
+    padding: 0;
+}
+.ph-modal__close:hover { color: var(--ph-cream); }
+
+.ph-modal__iframe-wrap {
+    position: relative;
+    padding-bottom: 56.25%;
+    height: 0;
+    overflow: hidden;
+}
+.ph-modal__iframe-wrap iframe {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: none;
+}
+
+/* ---- Parallax ---- */
+.ph-parallax-wrap { overflow: hidden; position: relative; }
+.ph-parallax-img  { will-change: transform; transform: scale(1.1); }
+
+/* ---- Magnetic ---- */
+.ph-magnetic { display: inline-block; }
+
+/* ---- Mobile overrides ---- */
+@media (max-width: 768px) {
+    .ph-hero__video-wrap video { display: none; }
+    .ph-hero__fallback          { display: block; }
+    .ph-hero__scroll            { display: none; }
+}
