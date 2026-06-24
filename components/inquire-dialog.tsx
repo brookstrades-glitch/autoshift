@@ -52,11 +52,45 @@ export default function InquireDialog({ listing, open, onOpenChange }: Props) {
         </DialogHeader>
 
         {submitted ? (
-          <Alert role="status">
-            <AlertDescription>
-              Got it. We will be in touch at the number or email you provided.
-            </AlertDescription>
-          </Alert>
+          <div className="space-y-5">
+            {/* Step 1 — Confirmation */}
+            <Alert role="status">
+              <AlertDescription>
+                Got it. We will be in touch at the number or email you provided.
+              </AlertDescription>
+            </Alert>
+
+            {/* Step 2 — Down Payment */}
+            <div className="rounded-lg border p-4 space-y-3">
+              <div>
+                <p className="font-semibold text-base">Secure your spot</p>
+                <p className="text-sm text-muted-foreground">To hold this vehicle, send the down payment directly — no middleman.</p>
+              </div>
+
+              {listing.down_payment != null && (
+                <div className="space-y-2">
+                  {/* Cash App */}
+                  <a
+                    href={`https://cash.app/$FVNIYI20/${Math.round(listing.down_payment)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-center w-full rounded-md px-4 py-2 text-sm font-semibold text-black"
+                    style={{ backgroundColor: '#00D632' }}
+                  >
+                    Pay with Cash App — ${listing.down_payment.toLocaleString()}
+                  </a>
+
+                  {/* Zelle */}
+                  <div className="rounded-md border px-4 py-3 text-sm space-y-0.5">
+                    <p className="font-semibold">Pay with Zelle</p>
+                    <p className="text-muted-foreground">Send <span className="text-foreground font-medium">+1 (832) 980-7618</span> from your banking app.</p>
+                  </div>
+                </div>
+              )}
+
+              <p className="text-xs text-muted-foreground">Down payment confirms your intent. We'll reach out to finalize.</p>
+            </div>
+          </div>
         ) : (
           <form onSubmit={handleSubmit} noValidate className="space-y-4 mt-1">
             <div>

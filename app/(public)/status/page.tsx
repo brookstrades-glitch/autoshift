@@ -15,6 +15,7 @@ interface StatusResult {
   created_at: string;
   status: string;
   display_status: string;
+  recommended_down_payment?: number;
 }
 
 export default function StatusPage() {
@@ -74,12 +75,17 @@ export default function StatusPage() {
           ) : (
             <div className="space-y-4">
               {results.map((r) => (
-                <div key={r.id} className="border rounded-lg p-4 flex items-center justify-between">
+                <div key={r.id} className="border rounded-lg p-4 flex items-center justify-between gap-4">
                   <div>
                     <div className="font-semibold">{r.year} {r.make} {r.model}</div>
                     <div className="text-sm text-muted-foreground">
                       Submitted {new Date(r.created_at).toLocaleDateString()}
                     </div>
+                    {r.recommended_down_payment != null && (r.status === 'live' || r.status === 'contacted') && (
+                      <div className="text-sm mt-1 font-medium text-emerald-400">
+                        Down payment: ${r.recommended_down_payment.toLocaleString()}
+                      </div>
+                    )}
                   </div>
                   <Badge variant={badgeVariant(r.display_status)}>{r.display_status}</Badge>
                 </div>

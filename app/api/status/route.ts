@@ -8,8 +8,8 @@ export async function POST(req: NextRequest) {
 
   const db = supabaseAdmin();
   const [byPhone, byEmail] = await Promise.all([
-    db.from('submissions').select('id,year,make,model,created_at,status').eq('phone', contact),
-    db.from('submissions').select('id,year,make,model,created_at,status').eq('email', contact),
+    db.from('submissions').select('id,year,make,model,created_at,status,recommended_down_payment').eq('phone', contact),
+    db.from('submissions').select('id,year,make,model,created_at,status,recommended_down_payment').eq('email', contact),
   ]);
 
   const seen = new Set<string>();

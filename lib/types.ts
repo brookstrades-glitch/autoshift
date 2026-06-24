@@ -27,6 +27,8 @@ export interface Submission {
   status: SubmissionStatus;
   photo_urls: string[];
   admin_notes?: string;
+  vin?: string;
+  recommended_down_payment?: number;
 }
 
 export interface PublicListing {

@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import PhotoUpload, { type UploadStatus } from './photo-upload';
+import { calcRecommendedDownPayment, formatCurrency } from '@/lib/utils';
 
 export default function SellerForm() {
   const [submitted, setSubmitted] = useState(false);
@@ -17,6 +18,8 @@ export default function SellerForm() {
   const [photoError, setPhotoError] = useState('');
   const [offline, setOffline] = useState(false);
   const [disableCleanup, setDisableCleanup] = useState(false);
+  const [vinLoading, setVinLoading] = useState(false);
+  const [vinError, setVinError] = useState('');
 
   // Photo upload state — populated by PhotoUpload via onStatusChange
   const [uploadStatus, setUploadStatus] = useState<UploadStatus>('idle');
@@ -52,13 +55,34 @@ export default function SellerForm() {
 
   const [form, setForm] = useState({
     first_name: '', last_name: '', phone: '', email: '',
-    year: '', make: '', model: '', color: '', vehicle_type: '',
+    vin: '', year: '', make: '', model: '', color: '', vehicle_type: '',
     mileage: '', monthly_payment: '', payments_left: '', lender: '', balance: '',
     down_payment: '', seller_reason: '',
   });
 
   function update(field: string, value: string) {
     setForm(prev => ({ ...prev, [field]: value }));
+  }
+
+  async function lookupVin(vin: string) {
+    setVinError('');
+    setVinLoading(true);
+    try {
+      const res = await fetch(`https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVinValues/${vin}?format=json`);
+      const data = await res.json();
+      const r = data.Results?.[0];
+      if (!r || r.ErrorCode !== '0') {
+        setVinError('VIN not found. Check the number and try again.');
+      } else {
+        const toTitle = (s: string) => s.toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
+        if (r.ModelYear) update('year', r.ModelYear);
+        if (r.Make) update('make', toTitle(r.Make));
+        if (r.Model) update('model', toTitle(r.Model));
+      }
+    } catch {
+      setVinError('Lookup failed. Fill in vehicle details manually.');
+    }
+    setVinLoading(false);
   }
 
   function formatPhone(raw: string): string {
@@ -221,6 +245,30 @@ export default function SellerForm() {
       {/* ── Vehicle Details ── */}
       <div className={section}>
         <h2 className={heading} id="section-vehicle">Vehicle Details</h2>
+        <div>
+          <Label htmlFor="vin">VIN <span className="text-muted-foreground font-normal">(optional — auto-fills year, make &amp; model)</span></Label>
+          <div className="flex gap-2">
+            <Input
+              id="vin"
+              value={form.vin}
+              onChange={e => { update('vin', e.target.value.toUpperCase()); setVinError(''); }}
+              placeholder="1HGCM82633A004352"
+              maxLength={17}
+              className="font-mono"
+            />
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={form.vin.length !== 17 || vinLoading}
+              onClick={() => lookupVin(form.vin)}
+              className="shrink-0"
+            >
+              {vinLoading ? 'Looking up…' : 'Look up'}
+            </Button>
+          </div>
+          {vinError && <p className="text-xs text-destructive mt-1">{vinError}</p>}
+        </div>
         <div className="grid grid-cols-3 gap-4">
           <div>
             <Label htmlFor="year">Year <span aria-hidden="true" className="text-destructive">*</span></Label>
@@ -340,6 +388,17 @@ export default function SellerForm() {
             inputMode="numeric"
             placeholder="18,000"
           />
+          {(() => {
+            const bal = Number(form.balance.replace(/[^0-9.]/g, ''));
+            const rec = bal > 0 ? calcRecommendedDownPayment(bal) : null;
+            return rec != null ? (
+              <p className="text-xs text-muted-foreground mt-1.5">
+                Based on your balance, we typically recommend a{' '}
+                <span className="text-foreground font-medium">{formatCurrency(rec)}</span>{' '}
+                down payment — final amount is reviewed by AutoShift.
+              </p>
+            ) : null;
+          })()}
         </div>
       </div>
 

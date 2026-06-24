@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
+import { calcRecommendedDownPayment } from '@/lib/utils';
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
@@ -33,6 +34,8 @@ export async function POST(req: NextRequest) {
     comfort_level: 'maybe',
     seller_reason: body.seller_reason as string,
     photo_urls: photoUrls,
+    vin: body.vin ? (body.vin as string).toUpperCase() : null,
+    recommended_down_payment: calcRecommendedDownPayment(body.balance ? Number(body.balance) : null),
   };
 
   const db = supabaseAdmin();

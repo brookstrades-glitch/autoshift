@@ -8,7 +8,8 @@ import AdminTable from './admin-table';
 import AdminInquiries from './admin-inquiries';
 import AdminAddListing from './admin-add-listing';
 import { Button } from '@/components/ui/button';
-import { formatCurrency } from '@/lib/utils';
+import { Input } from '@/components/ui/input';
+import { formatCurrency, calcRecommendedDownPayment } from '@/lib/utils';
 import { useToast } from '@/components/ui/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { X } from 'lucide-react';
@@ -40,16 +41,30 @@ function PendingTray({ listings, onUpdate }: { listings: Submission[]; onUpdate:
   const { toast } = useToast();
   const [viewing, setViewing] = useState<Submission | null>(null);
   const pending = listings.filter(l => l.status === 'pending');
+
+  const [recDownDrafts, setRecDownDrafts] = useState<Record<string, string>>(() =>
+    Object.fromEntries(pending.map(l => [
+      l.id,
+      l.recommended_down_payment != null
+        ? String(l.recommended_down_payment)
+        : String(calcRecommendedDownPayment(l.balance ?? null) ?? ''),
+    ]))
+  );
+
   if (pending.length === 0) return null;
 
   async function act(id: string, status: 'live' | 'rejected') {
+    const raw = recDownDrafts[id]?.replace(/[^0-9.]/g, '');
+    const rec = raw ? Number(raw) : null;
+    const body: Record<string, unknown> = { id, status };
+    if (rec) body.recommended_down_payment = rec;
     const res = await fetch('/api/admin/listings', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id, status }),
+      body: JSON.stringify(body),
     });
     if (res.ok) {
-      onUpdate(id, { status });
+      onUpdate(id, { status, ...(rec ? { recommended_down_payment: rec } : {}) });
       toast({ title: status === 'live' ? 'Approved — now live' : 'Rejected' });
     }
   }
@@ -62,7 +77,7 @@ function PendingTray({ listings, onUpdate }: { listings: Submission[]; onUpdate:
         </p>
         <div className="space-y-2">
           {pending.map(l => (
-            <div key={l.id} className="flex items-center gap-3 rounded-lg border border-border bg-card px-3 py-3">
+            <div key={l.id} className="flex items-start gap-3 rounded-lg border border-border bg-card px-3 py-3">
               {l.photo_urls[0] ? (
                 <button onClick={() => setViewing(l)} className="shrink-0">
                   <img
@@ -78,15 +93,25 @@ function PendingTray({ listings, onUpdate }: { listings: Submission[]; onUpdate:
                 <p className="font-semibold text-sm truncate">{l.year} {l.make} {l.model}</p>
                 <p className="text-xs text-muted-foreground">
                   {l.first_name} {l.last_name} · {formatCurrency(l.monthly_payment)}/mo
-                  {l.down_payment != null && <span className="ml-1 text-amber-300 font-medium">· {formatCurrency(l.down_payment)} down requested</span>}
+                  {l.down_payment != null && <span className="ml-1 text-amber-300 font-medium">· {formatCurrency(l.down_payment)} seller ask</span>}
                 </p>
                 {l.photo_urls.length > 1 && (
                   <button onClick={() => setViewing(l)} className="text-[11px] text-primary hover:underline mt-0.5">
                     View all {l.photo_urls.length} photos
                   </button>
                 )}
+                <div className="mt-2 flex items-center gap-2">
+                  <span className="text-[11px] text-muted-foreground shrink-0">Rec. down payment $</span>
+                  <Input
+                    value={recDownDrafts[l.id] ?? ''}
+                    onChange={e => setRecDownDrafts(prev => ({ ...prev, [l.id]: e.target.value }))}
+                    inputMode="numeric"
+                    className="h-7 w-24 text-sm px-2"
+                    placeholder="2000"
+                  />
+                </div>
               </div>
-              <div className="flex gap-2 shrink-0">
+              <div className="flex gap-2 shrink-0 pt-1">
                 <Button size="sm" onClick={() => act(l.id, 'live')}>Approve</Button>
                 <Button size="sm" variant="destructive" onClick={() => act(l.id, 'rejected')}>Reject</Button>
               </div>

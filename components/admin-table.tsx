@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { formatCurrency } from '@/lib/utils';
+import { Input } from '@/components/ui/input';
 import { useToast } from '@/components/ui/use-toast';
 
 const STATUS_TABS = ['live', 'pending', 'sold', 'contacted', 'archived', 'rejected', 'all'] as const;
@@ -22,6 +23,7 @@ export default function AdminTable({ listings, onUpdate }: Props) {
   const [tab, setTab] = useState<string>('live');
   const [detail, setDetail] = useState<Submission | null>(null);
   const [notes, setNotes] = useState('');
+  const [recDownDraft, setRecDownDraft] = useState('');
   const [editingDownPayment, setEditingDownPayment] = useState<string | null>(null);
   const [downPaymentDraft, setDownPaymentDraft] = useState('');
   const { toast } = useToast();
@@ -63,9 +65,22 @@ export default function AdminTable({ listings, onUpdate }: Props) {
     toast({ title: 'Notes saved' });
   }
 
+  async function saveRecDown(id: string) {
+    const raw = recDownDraft.replace(/[^0-9.]/g, '');
+    const parsed = raw ? Number(raw) : null;
+    await fetch('/api/admin/listings', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, recommended_down_payment: parsed }),
+    });
+    onUpdate(id, { recommended_down_payment: parsed ?? undefined });
+    toast({ title: parsed ? `Rec. down payment set to ${formatCurrency(parsed)}` : 'Rec. down payment cleared' });
+  }
+
   function openDetail(l: Submission) {
     setDetail(l);
     setNotes(l.admin_notes ?? '');
+    setRecDownDraft(l.recommended_down_payment != null ? String(l.recommended_down_payment) : '');
   }
 
   function statusBadge(s: string) {
@@ -232,10 +247,24 @@ export default function AdminTable({ listings, onUpdate }: Props) {
                 {detail.phone && <><span className="text-muted-foreground">Phone</span><span>{detail.phone}</span></>}
                 {detail.email && <><span className="text-muted-foreground">Email</span><span>{detail.email}</span></>}
                 <span className="text-muted-foreground">Lender</span><span>{detail.lender}</span>
-                {detail.down_payment != null && <><span className="text-muted-foreground">Down requested</span><span className="font-medium">{formatCurrency(detail.down_payment)}</span></>}
+                {detail.vin && <><span className="text-muted-foreground">VIN</span><span className="font-mono text-xs">{detail.vin}</span></>}
+                {detail.down_payment != null && <><span className="text-muted-foreground">Seller ask</span><span className="font-medium">{formatCurrency(detail.down_payment)}</span></>}
                 {detail.balance && <><span className="text-muted-foreground">Balance</span><span>{formatCurrency(detail.balance)}</span></>}
                 {detail.mileage && <><span className="text-muted-foreground">Mileage</span><span>{detail.mileage.toLocaleString()} mi</span></>}
                 {detail.seller_reason && <><span className="text-muted-foreground">Reason</span><span>{detail.seller_reason}</span></>}
+              </div>
+              <div>
+                <Label htmlFor="rec-down">Recommended Down Payment ($)</Label>
+                <div className="flex gap-2 mt-1">
+                  <Input
+                    id="rec-down"
+                    value={recDownDraft}
+                    onChange={e => setRecDownDraft(e.target.value)}
+                    inputMode="numeric"
+                    placeholder="2000"
+                  />
+                  <Button size="sm" variant="outline" onClick={() => saveRecDown(detail.id)}>Save</Button>
+                </div>
               </div>
               <div>
                 <Label htmlFor="admin-notes">Admin Notes</Label>
