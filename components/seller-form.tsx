@@ -8,7 +8,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import PhotoUpload, { type UploadStatus } from './photo-upload';
-import { calcRecommendedDownPayment, formatCurrency } from '@/lib/utils';
 
 export default function SellerForm() {
   const [submitted, setSubmitted] = useState(false);
@@ -57,7 +56,7 @@ export default function SellerForm() {
     first_name: '', last_name: '', phone: '', email: '',
     vin: '', year: '', make: '', model: '', color: '', vehicle_type: '',
     mileage: '', monthly_payment: '', payments_left: '', lender: '', balance: '',
-    down_payment: '', seller_reason: '',
+    seller_reason: '',
   });
 
   function update(field: string, value: string) {
@@ -387,32 +386,6 @@ export default function SellerForm() {
             onChange={e => update('balance', e.target.value)}
             inputMode="numeric"
             placeholder="18,000"
-          />
-          {(() => {
-            const bal = Number(form.balance.replace(/[^0-9.]/g, ''));
-            const rec = bal > 0 ? calcRecommendedDownPayment(bal) : null;
-            return rec != null ? (
-              <p className="text-xs text-muted-foreground mt-1.5">
-                Based on your balance, we typically recommend a{' '}
-                <span className="text-foreground font-medium">{formatCurrency(rec)}</span>{' '}
-                down payment — final amount is reviewed by AutoShift.
-              </p>
-            ) : null;
-          })()}
-        </div>
-      </div>
-
-      {/* ── Down Payment ── */}
-      <div className={section}>
-        <h2 className={heading}>Down Payment</h2>
-        <div>
-          <Label htmlFor="down_payment">Amount you're asking ($) <span className="text-muted-foreground font-normal">(optional)</span></Label>
-          <Input
-            id="down_payment"
-            value={form.down_payment}
-            onChange={e => update('down_payment', e.target.value)}
-            inputMode="numeric"
-            placeholder="1,500"
           />
         </div>
       </div>
