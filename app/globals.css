@@ -28,7 +28,10 @@
 }
 
 @layer base {
-  html { scroll-behavior: smooth; }
+  html {
+    scroll-behavior: smooth;
+    @apply bg-background;
+  }
   * { @apply border-border; }
   body {
     @apply bg-background text-foreground;

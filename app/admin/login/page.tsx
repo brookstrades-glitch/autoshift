@@ -29,7 +29,7 @@ export default function AdminLoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center">
+    <div className="min-h-screen min-h-[100dvh] flex items-center justify-center">
       <div className="w-full max-w-sm space-y-6 p-8 border rounded-lg">
         <h1 className="text-2xl font-bold">Admin Login</h1>
         {error && <Alert variant="destructive"><AlertDescription>{error}</AlertDescription></Alert>}

@@ -2,7 +2,7 @@ import Nav from '@/components/nav';
 
 export default function PublicLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen min-h-[100dvh] flex flex-col">
       <Nav />
       <main className="flex-1">{children}</main>
       <footer className="border-t py-6 mt-12">
