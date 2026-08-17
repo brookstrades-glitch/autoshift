@@ -49,6 +49,13 @@ export interface PublicListing {
   photo_urls: string[];
 }
 
+export interface FinancingClick {
+  id: string;
+  created_at: string;
+  listing_id: string | null;
+  referrer?: string;
+}
+
 export interface Inquiry {
   id: string;
   created_at: string;
