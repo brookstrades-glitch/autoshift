@@ -5,7 +5,8 @@ import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { formatCurrency } from '@/lib/utils';
-import { FINANCING_URL } from '@/lib/financing';
+import { financingHref } from '@/lib/financing';
+import Link from 'next/link';
 import InquireDialog from './inquire-dialog';
 
 export default function ListingCard({ listing }: { listing: PublicListing }) {
@@ -110,9 +111,7 @@ export default function ListingCard({ listing }: { listing: PublicListing }) {
                 Inquire
               </Button>
               <Button asChild variant="outline" className="w-full">
-                <a href={FINANCING_URL} target="_blank" rel="noopener noreferrer">
-                  Apply for Financing
-                </a>
+                <Link href={financingHref(listing.id)}>Apply for Financing</Link>
               </Button>
             </CardFooter>
           )}

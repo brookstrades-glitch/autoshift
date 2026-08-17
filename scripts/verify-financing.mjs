@@ -41,9 +41,23 @@ const cards = await page.locator('a:has-text("Apply for Financing")').count();
 console.log('listing cards with financing button:', cards);
 await page.screenshot({ path: `${OUT}/desktop-browse.png`, fullPage: false });
 
+// card button carries the listing id through to /financing
+const beacons = [];
+page.on('request', r => r.url().includes('/api/financing-clicks') && beacons.push(r.postData()));
+await page.locator('a:has-text("Apply for Financing")').first().click();
+await page.waitForURL('**/financing?listing=*');
+console.log('card → financing url:', new URL(page.url()).search);
+console.log('applying-for banner:', (await page.locator('text=Applying for').count()) === 1 ? 'shown' : 'MISSING');
+await page.screenshot({ path: `${OUT}/desktop-financing-with-vehicle.png`, fullPage: false });
+
+// copy-to-clipboard
+await desktop.grantPermissions(['clipboard-read', 'clipboard-write']);
+await page.click('button:has-text("Copy vehicle details")');
+console.log('clipboard:', await page.evaluate(() => navigator.clipboard.readText()));
+
 // nav link works
 await page.click('a[href="/financing"]');
-await page.waitForURL('**/financing');
+await page.waitForURL(/\/financing$/);
 console.log('nav link → financing OK');
 
 // external link opens in a new tab with the right URL
@@ -53,6 +67,8 @@ const [popup] = await Promise.all([
 ]);
 console.log('popup url:', popup.url());
 await popup.close();
+await page.waitForTimeout(500);
+console.log('financing-click beacons sent:', beacons);
 
 // horizontal overflow check
 const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
