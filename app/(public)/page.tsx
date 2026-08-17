@@ -59,6 +59,9 @@ export default async function HomePage() {
               </a>
             </Button>
             <Button asChild size="default" variant="outline">
+              <Link href="/financing">Apply for Financing</Link>
+            </Button>
+            <Button asChild size="default" variant="outline">
               <Link href="/sell">List My Note →</Link>
             </Button>
           </div>

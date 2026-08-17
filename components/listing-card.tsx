@@ -5,6 +5,7 @@ import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { formatCurrency } from '@/lib/utils';
+import { FINANCING_URL } from '@/lib/financing';
 import InquireDialog from './inquire-dialog';
 
 export default function ListingCard({ listing }: { listing: PublicListing }) {
@@ -104,9 +105,14 @@ export default function ListingCard({ listing }: { listing: PublicListing }) {
           </CardContent>
 
           {!isSold && (
-            <CardFooter className="p-4 pt-0">
+            <CardFooter className="p-4 pt-0 flex-col gap-2">
               <Button className="w-full" onClick={() => setOpen(true)}>
                 Inquire
+              </Button>
+              <Button asChild variant="outline" className="w-full">
+                <a href={FINANCING_URL} target="_blank" rel="noopener noreferrer">
+                  Apply for Financing
+                </a>
               </Button>
             </CardFooter>
           )}

@@ -8,3 +8,4 @@ infra/terraform.tfstate
 infra/terraform.tfstate.backup
 .vercel
 .env*
+tsconfig.tsbuildinfo

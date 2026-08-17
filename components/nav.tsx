@@ -17,6 +17,9 @@ export default function Nav() {
           <Button asChild variant="ghost" size="sm" className="hidden sm:inline-flex text-muted-foreground hover:text-foreground">
             <Link href="/browse">Browse</Link>
           </Button>
+          <Button asChild variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
+            <Link href="/financing">Financing</Link>
+          </Button>
           <Button asChild size="sm">
             <Link href="/sell">List My Note</Link>
           </Button>

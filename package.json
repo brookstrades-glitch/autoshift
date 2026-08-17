@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "brand:images": "node scripts/generate-brand-images.mjs",
+    "verify:ui": "node scripts/verify-financing.mjs"
   },
   "dependencies": {
     "@radix-ui/react-checkbox": "^1.0.4",
@@ -25,7 +27,7 @@
     "clsx": "^2.1.1",
     "jose": "^5.2.4",
     "lucide-react": "^0.379.0",
-    "next": "14.2.3",
+    "next": "^14.2.35",
     "postcss": "^8.5.12",
     "react": "^18",
     "react-dom": "^18",
@@ -38,7 +40,8 @@
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "eslint": "^8",
-    "eslint-config-next": "14.2.3",
+    "eslint-config-next": "^14.2.35",
+    "playwright": "^1.62.1",
     "typescript": "^5"
   }
 }
